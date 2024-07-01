@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 
+## each of this is an enclosure ID
 focus_areas = {
 3103  : 'karlin',
 13295 : 'vinohrady',
@@ -13,7 +14,8 @@ focus_areas = {
 }
 
 def generate_enc_groups(tessellation, enclosures, include_random_sample=False, random_sample_size=1000):    
-    
+    '''Create a buffer around a specific enclosure, then return all tessellation cell ids inside the buffer.
+    Also add random points to test dimensionality reduction/clustering algorithm performance.'''
     buffers = enclosures.loc[list(focus_areas.keys())].buffer(500)
     group_dict = pd.Series(focus_areas).reset_index(drop=True).to_dict()
     areas, tids = tessellation.sindex.query(buffers, predicate='intersects')
@@ -30,6 +32,7 @@ def get_tess_groups_original_ilocs(tessellation,tess_groups):
     return pd.Series(np.arange(0, len(tessellation)), index=tessellation.index).loc[tess_groups.index].values
 
 def pprint_cluster_percentiles(X_train, labels):
+    ''''print cluster statistics and highlight the distribution of each feature.'''
     cluster_stats = X_train.groupby(labels).describe()
     cluster_stats = cluster_stats.loc[:,(slice(None),['25%', '50%', '75%'])].T
     counts = X_train.groupby(labels).size()

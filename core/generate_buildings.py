@@ -86,7 +86,7 @@ def process_regions():
 
 
 def read_region_buildings(typed_dict, region_ids, region_hull, region_id):
-
+    '''Filter all buildings and only get those with the specific region id.'''
     typed_region_buildings = typed_dict.loc[region_ids[region_id]].values
     read_mask = region_hull.buffer(100)
     
