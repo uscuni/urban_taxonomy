@@ -1,0 +1,354 @@
+import momepy as mm
+import numpy as np
+import pandas as pd
+from libpysal.graph import Graph
+import geopandas as gpd
+import pytest
+import glob
+import shapely
+import gc
+from shapely import coverage_simplify
+import datetime
+import geoplanar
+from libpysal.graph import read_parquet
+from utils import lazy_higher_order, partial_apply, partial_describe_reached_agg
+
+regions_datadir = '/data/uscuni-ulce/'
+data_dir = '/data/uscuni-ulce/processed_data/'
+graph_dir = '/data/uscuni-ulce/processed_data/neigh_graphs/'
+chars_dir = '/data/uscuni-ulce/processed_data/chars/'
+eubucco_files = glob.glob(regions_datadir + 'eubucco_raw/*')
+
+def process_regions():
+    
+    region_hulls = gpd.read_parquet(regions_datadir + 'regions/' + 'regions_hull.parquet')
+    # 69300 - prague
+    # 12199 - small test
+    # large regions = [4, 226, 3607, 8754, 16501, 55713, 62929, 107685, 115457]
+    
+    # for region_id, region_hull in region_hulls.iterrows():
+    for region_id in reversed([69300]):
+        
+        
+        print(datetime.datetime.now(), '----Processing ------', region_id)
+
+        process_street_chars(region_id)
+        gc.collect()
+        
+        process_enclosure_chars(region_id)
+        gc.collect()
+
+        process_building_chars(region_id)
+        gc.collect()
+        
+        process_tessellation_chars(region_id)
+        gc.collect()
+
+
+def run_parallel_regions():
+    building_region_mapping = pd.read_parquet(regions_datadir + 'regions/' +'id_to_region.parquet', engine='pyarrow')
+    counts = building_region_mapping.groupby('region')['id'].size()
+    del building_region_mapping
+    gc.collect()
+    parallel_regions = counts[counts < 6e5].index.values
+    
+    from joblib import Parallel, delayed
+    n_jobs = -1
+    new = Parallel(n_jobs=n_jobs)(
+        delayed(process_single_region)(region_id) for region_id in parallel_regions
+    )
+
+
+def process_single_region(region_id):
+    print(datetime.datetime.now(), '----Processing ------', region_id)
+
+    try:
+        process_street_chars(region_id)
+        gc.collect()
+        
+        process_enclosure_chars(region_id)
+        gc.collect()
+    
+        process_building_chars(region_id)
+        gc.collect()
+        
+        process_tessellation_chars(region_id)
+        gc.collect()
+    except:
+        print('BIG PROBLEMS IN REGION', region_id)
+
+
+def process_street_chars(region_id):
+
+    print('Processing streets')
+    streets = gpd.read_parquet(data_dir + f'/streets/streets_{region_id}.parquet')
+    
+    graph = mm.gdf_to_nx(streets)
+    graph = mm.node_degree(graph)
+    graph = mm.subgraph(
+        graph,
+        radius=5,
+        meshedness=True,
+        cds_length=False,
+        mode="sum",
+        degree="degree",
+        length="mm_len",
+        mean_node_degree=False,
+        proportion={0: True, 3: True, 4: True},
+        cyclomatic=False,
+        edge_node_ratio=False,
+        gamma=False,
+        local_closeness=True,
+        closeness_weight="mm_len",
+        node_density=True,
+        verbose=False
+    )
+    graph = mm.cds_length(graph, radius=3, name="ldsCDL", verbose=False)
+    graph = mm.clustering(graph, name="xcnSCl")
+    graph = mm.mean_node_dist(graph, name="mtdMDi", verbose=False)
+    
+    nodes, edges = mm.nx_to_gdf(graph, spatial_weights=False)
+    
+    edges["sdsLen"] = streets.geometry.length
+    street_orientation = mm.orientation(streets)
+    edges["sssLin"] = mm.linearity(streets)
+
+
+    str_q1 = read_parquet(graph_dir + f'street_graph_{region_id}_knn1.parquet')
+    
+    def mean_edge_length(partical_focals, partial_higher, y):
+        return partial_higher.describe(y.loc[partial_higher.unique_ids], statistics=['mean'])['mean']
+    
+    edges["ldsMSL"] = partial_apply(str_q1, higher_order_k=3, n_splits=30, func=mean_edge_length, y=edges.geometry.length)
+
+    ## tesselation street interactions
+    tessellation = gpd.read_parquet(data_dir + f'/tessellations/tessellation_{region_id}.parquet')
+    tess_nid = mm.get_network_id(tessellation, edges, network_id=edges.index, verbose=False)
+    streets["sdsAre"] = mm.describe_agg(tessellation.geometry.area, tess_nid, streets.index, statistics=['count', 'sum'])['sum']
+
+    
+    res = partial_describe_reached_agg(
+        tessellation.geometry.area, tess_nid, str_q1, 
+        higher_order=3, n_splits=30, q=None, statistics=['sum', 'count']
+    )
+    edges["ldsRea"] = res['count']
+    edges["ldsAre"] = res['sum']
+
+    blg_nid = tess_nid[tess_nid.index >= 0]
+    edges["sisBpM"] = blg_nid.value_counts() / streets.length
+
+    ## street building interactions
+    buildings = gpd.read_parquet(data_dir + f'/buildings/buildings_{region_id}.parquet')
+
+    profile = mm.street_profile(streets, buildings, height=None, distance=3)
+    edges["sdsSPW"] = profile['width']
+    edges["sdsSPO"] = profile['openness']
+    edges["sdsSWD"] = profile['width_deviation']
+
+
+    ## nodes graph stuff
+    nodes_graph = read_parquet(graph_dir + f'nodes_graph_{region_id}_knn1.parquet')
+
+    edges['nID'] = edges.index.values
+    buildings['nID'] = tess_nid[tess_nid.index >= 0]
+    tessellation["nodeID"] = mm.get_node_id(buildings, nodes, edges, "nodeID", 'nID', verbose=False)
+
+    nodes["sddAre"] = mm.describe_agg(tessellation.geometry.area, tessellation["nodeID"])['sum']
+    res = mm.describe_reached_agg(
+        tessellation.geometry.area, tessellation['nodeID'] , graph=nodes_graph
+    )
+    nodes["midRea"] = res['count']
+    nodes["midAre"] = res['sum']
+    nodes.rename(
+        columns={
+            "degree": "mtdDeg",
+            "meshedness": "lcdMes",
+            "local_closeness": "lcnClo",
+            "proportion_3": "linP3W",
+            "proportion_4": "linP4W",
+            "proportion_0": "linPDE",
+            "node_density": "lddNDe",
+            "node_density_weighted": "linWID",
+        }, inplace=True
+    )
+    nodes.to_parquet(chars_dir + f'nodes/chars_{region_id}.parquet')
+    edges.to_parquet(chars_dir + f'streets/chars_{region_id}.parquet')
+    
+    del edges
+    del nodes
+    del tessellation
+    del buildings
+
+def process_enclosure_chars(region_id):
+
+    print('Processing enclosures')
+    enclosures = gpd.read_parquet(data_dir + f'/enclosures/enclosure_{region_id}.parquet')
+    enclosures["ldkAre"] = enclosures.geometry.area
+    enclosures["ldkPer"] = enclosures.geometry.length
+    enclosures["lskCCo"] = mm.circular_compactness(enclosures)
+    enclosures["lskERI"] = mm.equivalent_rectangular_index(enclosures)
+    enclosures["lskCWA"] = mm.compactness_weighted_axis(enclosures)
+    enclosures["ltkOri"] = mm.orientation(enclosures)
+    
+    blo_q1 = read_parquet(graph_dir + f'enclosure_graph_{region_id}_knn1.parquet')
+    enclosures["ltkWNB"] = mm.neighbors(enclosures, blo_q1, weighted=True)
+
+    ## buildings enclosures interactions
+    buildings = gpd.read_parquet(data_dir + f'/buildings/buildings_{region_id}.parquet')
+    tessellation = gpd.read_parquet(data_dir + f'/tessellations/tessellation_{region_id}.parquet')
+
+    beid = buildings.merge(tessellation['enclosure_index'], left_index=True, right_index=True)['enclosure_index']
+
+    res = mm.describe_agg(buildings.geometry.area, beid, result_index=enclosures.index, statistics=['count', 'sum'])
+    
+    enclosures["likWBB"] = res['sum'] / enclosures.geometry.area
+    
+    enclosures.to_parquet(chars_dir + f'enclosures/chars_{region_id}.parquet')
+
+    del enclosures
+    del blo_q1
+    del tessellation
+
+
+def process_building_chars(region_id):
+
+    print('Processing buildings')
+    buildings = gpd.read_parquet(data_dir + f'/buildings/buildings_{region_id}.parquet')
+
+    buildings['sdbAre'] = buildings.geometry.area
+    buildings['sdbPer'] = buildings.geometry.length
+    buildings['sdbCoA'] = mm.courtyard_area(buildings.geometry)
+    buildings['ssbCCo'] = mm.circular_compactness(buildings)
+    buildings['ssbCor'] = mm.corners(buildings.geometry)
+    buildings['ssbSqu'] = mm.squareness(buildings.geometry)
+    buildings['ssbERI'] = mm.equivalent_rectangular_index(buildings.geometry)
+    buildings['ssbElo'] = mm.elongation(buildings.geometry)
+    
+    cencon = mm.centroid_corner_distance(buildings)
+    buildings['ssbCCM'] = cencon['mean']
+    buildings['ssbCCD'] = cencon['std']
+    buildings['stbOri'] = mm.orientation(buildings)
+
+    try:
+        buildings["mtbSWR"] = mm.shared_walls(buildings) /  buildings.geometry.length
+    except:
+        print('BIG PROBLEMS WITH BUILDINGS IN REGION', region_id)
+        buildings["mtbSWR"] = mm.shared_walls(buildings.set_precision(1e-6)) /  buildings.geometry.length
+
+    
+    buildings_q1 = read_parquet(graph_dir +  f'building_graph_{region_id}_knn1.parquet')
+    buildings["libNCo"] = mm.courtyards(buildings, buildings_q1)
+    buildings["ldbPWL"] = mm.perimeter_wall(buildings, buildings_q1)
+
+
+    ## building tessellation interactions
+
+    queen_1 = read_parquet(graph_dir + f'tessellation_graph_{region_id}_knn1.parquet')
+    bgraph = queen_1.subgraph(buildings_q1.unique_ids)
+
+    buildings['ltcBuA'] = mm.building_adjacency(buildings_q1, bgraph)    
+    buildings["mtbAli"] = mm.alignment(buildings['stbOri'], bgraph)
+    buildings["mtbNDi"] = mm.neighbor_distance(buildings, bgraph)
+
+    def partial_mean_intb_dist(partial_focals, partial_higher, buildings, bgraph):
+        pos_unique_higher = partial_higher.unique_ids
+        pos_unique_higher = pos_unique_higher[pos_unique_higher >=0]
+        partial_buildings = buildings.loc[pos_unique_higher]
+        partial_bgraph = bgraph.subgraph(partial_buildings.index.values)
+        partial_bgraph3 = partial_higher.subgraph(partial_buildings.index.values)
+    
+        res = pd.Series(np.nan, index=partial_higher.unique_ids)
+        mibd = mm.mean_interbuilding_distance(buildings.loc[pos_unique_higher], partial_bgraph, partial_bgraph3)
+        res.loc[mibd.index] = mibd.values
+        return res
+    
+    res = partial_apply(graph=queen_1, higher_order_k=3, n_splits=50,
+                    func=partial_mean_intb_dist, buildings=buildings, bgraph=bgraph)
+    buildings['ltbIBD'] = res[res.index>=0]
+
+    del queen_1
+    del bgraph
+    gc.collect()
+
+    tessellation = gpd.read_parquet(data_dir + f'/tessellations/tessellation_{region_id}.parquet')
+    tessellation['stcOri'] = mm.orientation(tessellation)
+    buildings['stbCeA'] = mm.cell_alignment(buildings['stbOri'],
+                                        tessellation[tessellation.index >= 0]['stcOri'])
+    
+    ## building streets interactions
+    streets = gpd.read_parquet(data_dir + f'/streets/streets_{region_id}.parquet')
+    graph = mm.gdf_to_nx(streets)
+    nodes, edges = mm.nx_to_gdf(graph, spatial_weights=False)
+    tess_nid = mm.get_network_id(tessellation, edges, network_id=edges.index, verbose=False)
+    blg_nid = tess_nid[tess_nid.index >= 0]
+    street_orientation = mm.orientation(streets)
+    buildings['nID'] = blg_nid
+    edges['nID'] = edges.index.values
+    buildings["stbSAl"] = mm.street_alignment(buildings['stbOri'][~blg_nid.isna()],
+                                             street_orientation,
+                                             blg_nid[~blg_nid.isna()])
+    
+    buildings["nodeID"] = mm.get_node_id(buildings, nodes, edges, "nodeID", 'nID', verbose=False)
+
+    buildings.to_parquet(chars_dir + f'buildings/chars_{region_id}.parquet')
+    del buildings
+    del nodes
+    del edges
+    gc.collect()
+
+
+def process_tessellation_chars(region_id):
+    
+    print('Processing tessellation')
+    tessellation = gpd.read_parquet(data_dir + f'/tessellations/tessellation_{region_id}.parquet')
+    
+    tessellation['stcOri'] = mm.orientation(tessellation)
+    tessellation['sdcLAL'] = mm.longest_axis_length(tessellation)
+    tessellation['sdcAre'] = tessellation.geometry.area
+    tessellation['sscCCo'] = mm.circular_compactness(tessellation)
+    tessellation['sscERI'] = mm.equivalent_rectangular_index(tessellation.geometry)
+    
+    queen_1 = read_parquet(graph_dir + f'tessellation_graph_{region_id}_knn1.parquet')
+    tessellation["mtcWNe"] = mm.neighbors(tessellation, queen_1, weighted=True)
+    tessellation["mdcAre"] = queen_1.describe(tessellation.geometry.area, statistics=['sum'])['sum']
+
+    def partial_block_count(partial_focal, partial_higher, y):
+        return partial_higher.describe(y.loc[partial_higher.unique_ids], statistics=['nunique'])['nunique']
+    tessellation['ltcWRB'] = partial_apply(queen_1, higher_order_k=3, n_splits=30,
+                                           func=partial_block_count, y=tessellation['enclosure_index'])
+
+    # tesselation buildings interactions
+    buildings = gpd.read_parquet(data_dir + f'/buildings/buildings_{region_id}.parquet')
+    tessellation['sicCAR'] = buildings.geometry.area / tessellation.geometry.area
+    
+    
+    ## tesselation street interactions
+    streets = gpd.read_parquet(data_dir + f'/streets/streets_{region_id}.parquet')
+    street_orientation = mm.orientation(streets)
+    graph = mm.gdf_to_nx(streets)
+    nodes, edges = mm.nx_to_gdf(graph, spatial_weights=False)
+    tess_nid = mm.get_network_id(tessellation, edges, network_id=edges.index, verbose=False)
+    
+    
+    tessellation["stcSAl"] = mm.street_alignment(tessellation['stcOri'][~tess_nid.isna()],
+                                             street_orientation,
+                                             tess_nid[~tess_nid.isna()].astype(int).values)
+    edges['nID'] = edges.index.values
+    buildings['nID'] = tess_nid[tess_nid.index >= 0]
+    tessellation["nodeID"] = mm.get_node_id(buildings, nodes, edges, "nodeID", 'nID', verbose=False)
+
+    tessellation["nodeID"] = mm.get_node_id(buildings, nodes, edges, "nodeID", 'nID', verbose=False)
+
+    
+    tessellation.to_parquet(chars_dir + f'tessellations/chars_{region_id}.parquet')
+    del tessellation
+    del buildings
+    del graph
+    del nodes
+    del edges
+    gc.collect()
+
+
+
+if __name__ == '__main__':
+    process_regions()
