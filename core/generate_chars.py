@@ -80,7 +80,7 @@ def process_single_region(region_id):
 def process_street_chars(region_id):
     print("Processing streets")
     streets = gpd.read_parquet(data_dir + f"/streets/streets_{region_id}.parquet")
-
+    
     graph = mm.gdf_to_nx(streets)
     graph = mm.node_degree(graph)
     graph = mm.subgraph(
@@ -106,10 +106,11 @@ def process_street_chars(region_id):
     graph = mm.mean_node_dist(graph, name="mtdMDi", verbose=False)
 
     nodes, edges = mm.nx_to_gdf(graph, spatial_weights=False)
+    edges = edges.sort_values('geometry')
 
     edges["sdsLen"] = streets.geometry.length
-    street_orientation = mm.orientation(streets)
-    edges["sssLin"] = mm.linearity(streets)
+    street_orientation = mm.orientation(edges)
+    edges["sssLin"] = mm.linearity(edges)
 
     str_q1 = read_parquet(graph_dir + f"street_graph_{region_id}_knn1.parquet")
 

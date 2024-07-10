@@ -29,7 +29,16 @@ requires-python = ">=3.11,<3.13"
 dependencies = [
     "momepy",
     "umap-learn",
-    "fast_hdbscan"
+    "fast_hdbscan",
+    "jupyterlab",
+    "pyarrow",
+    "matplotlib",
+    "lonboard",
+    "folium",
+    "mapclassify",
+    "datashader",
+    "bokeh",
+    "holoviews"
 ]
 
 
