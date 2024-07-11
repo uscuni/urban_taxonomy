@@ -12,7 +12,7 @@ data_dir = "/data/uscuni-ulce/processed_data/"
 eubucco_files = glob.glob(regions_datadir + "eubucco_raw/*")
 
 
-def process_regions():
+def process_all_regions_elements():
     region_hulls = gpd.read_parquet(
         regions_datadir + "regions/" + "regions_hull.parquet"
     )

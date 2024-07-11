@@ -11,7 +11,7 @@ data_dir = "/data/uscuni-ulce/processed_data/"
 eubucco_files = glob.glob(regions_datadir + "eubucco_raw/*")
 
 
-def process_regions():
+def process_all_regions_buildings():
     building_region_mapping = pd.read_parquet(
         regions_datadir + "regions/" + "id_to_region.parquet", engine="pyarrow"
     )
@@ -28,76 +28,81 @@ def process_regions():
     for region_id, region_hull in region_hulls.iterrows():
         region_hull = region_hull["convex_hull"]
 
-        # if region_id != 226: continue
+        if region_id != 69300: continue
 
         print("----", "Processing region: ", region_id, datetime.datetime.now())
         buildings = read_region_buildings(
             typed_dict, region_ids, region_hull, region_id
         )
 
-        initial_shape = buildings.shape
-
-        ## fix invalid geometry
-        buildings["geometry"] = buildings.make_valid()
-
-        ## explode multipolygons
-        buildings = buildings.explode(ignore_index=True)
-
-        ## keep only polygons
-        buildings = buildings[buildings["geometry"].geom_type == "Polygon"].reset_index(
-            drop=True
-        )
-
-        # set precision to speed up calc.
-        buildings["geometry"] = buildings.set_precision(0.001)
-
-        ## merge buildings that overlap either 1) at least .10 percent or are smaller than 10m^2
-        buildings = geoplanar.merge_overlaps(
-            buildings, merge_limit=10, overlap_limit=0.1
-        )
-
-        ## drop remaining overlaps
-        buildings = geoplanar.trim_overlaps(buildings, largest=False)
-
-        ## fix any multipolygons
-        buildings = buildings.explode(ignore_index=True)
-
-        print(
-            "Percent polygons: ",
-            (buildings.geom_type == "Polygon").sum() / buildings.shape[0],
-        )
-
-        # drop non-polygons
-        buildings = buildings[buildings.geom_type == "Polygon"].reset_index(drop=True)
-
-        # merge touching collapsing buildings
-        shrink = buildings.buffer(-0.4, resolution=2)
-        buildings = geoplanar.merge_touching(
-            buildings, np.where(shrink.is_empty), largest=True
-        )
-        # drop non polygons
-        buildings = buildings.explode()
-        buildings = buildings[buildings.geom_type == "Polygon"].reset_index(drop=True)
-
-        ##finally snap nearby buildings
-        buildings["geometry"] = geoplanar.snap(buildings, threshold=0.5)
-
-        ## need one more pass to ensure only valid geometries
-        buildings["geometry"] = buildings.make_valid()
-        buildings = buildings[buildings.geom_type == "Polygon"].reset_index(drop=True)
-
-        print(
-            "Final polygons: ",
-            buildings.shape[0],
-            ", dropped: ",
-            1 - (buildings.shape[0] / initial_shape[0]),
-        )
-
-        buildings["geometry"] = buildings.normalize()
+        buildings = process_region_buildings(buildings)
 
         buildings.to_parquet(data_dir + f"buildings/buildings_{region_id}.parquet")
 
         del buildings
+
+
+def process_region_buildings(buildings):
+    initial_shape = buildings.shape
+
+    ## fix invalid geometry
+    buildings["geometry"] = buildings.make_valid()
+
+    ## explode multipolygons
+    buildings = buildings.explode(ignore_index=True)
+
+    ## keep only polygons
+    buildings = buildings[buildings["geometry"].geom_type == "Polygon"].reset_index(
+        drop=True
+    )
+
+    # set precision to speed up calc.
+    buildings["geometry"] = buildings.set_precision(0.001)
+
+    ## merge buildings that overlap either 1) at least .10 percent or are smaller than 10m^2
+    buildings = geoplanar.merge_overlaps(
+        buildings, merge_limit=10, overlap_limit=0.1
+    )
+
+    ## drop remaining overlaps
+    buildings = geoplanar.trim_overlaps(buildings, largest=False)
+
+    ## fix any multipolygons
+    buildings = buildings.explode(ignore_index=True)
+
+    print(
+        "Percent polygons: ",
+        (buildings.geom_type == "Polygon").sum() / buildings.shape[0],
+    )
+
+    # drop non-polygons
+    buildings = buildings[buildings.geom_type == "Polygon"].reset_index(drop=True)
+
+    # merge touching collapsing buildings
+    shrink = buildings.buffer(-0.4, resolution=2)
+    buildings = geoplanar.merge_touching(
+        buildings, np.where(shrink.is_empty), largest=True
+    )
+    # drop non polygons
+    buildings = buildings.explode()
+    buildings = buildings[buildings.geom_type == "Polygon"].reset_index(drop=True)
+
+    ##finally snap nearby buildings
+    buildings["geometry"] = geoplanar.snap(buildings, threshold=0.5)
+
+    ## need one more pass to ensure only valid geometries
+    buildings["geometry"] = buildings.make_valid()
+    buildings = buildings[buildings.geom_type == "Polygon"].reset_index(drop=True)
+
+    print(
+        "Final polygons: ",
+        buildings.shape[0],
+        ", dropped: ",
+        1 - (buildings.shape[0] / initial_shape[0]),
+    )
+
+    buildings["geometry"] = buildings.normalize()
+    return buildings
 
 
 def read_region_buildings(typed_dict, region_ids, region_hull, region_id):

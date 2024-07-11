@@ -11,7 +11,7 @@ data_dir = "/data/uscuni-ulce/processed_data/"
 eubucco_files = glob.glob(regions_datadir + "eubucco_raw/*")
 
 
-def process_regions():
+def process_all_regions_graphs():
     region_hulls = gpd.read_parquet(
         regions_datadir + "regions/" + "regions_hull.parquet"
     )
@@ -66,6 +66,7 @@ def process_buildings_graph(region_id):
 
 
 def process_edges_graph(region_id):
+    ### streets graph
     streets = gpd.read_parquet(data_dir + f"/streets/streets_{region_id}.parquet")
 
     graph = Graph.build_contiguity(streets, rook=False).assign_self_weight()
@@ -80,7 +81,7 @@ def process_edges_graph(region_id):
 
 
 def process_enclosure_graph(region_id):
-    ## tessellation graphs
+    ## enclosure graphs
     inputdf = gpd.read_parquet(data_dir + f"enclosures/enclosure_{region_id}.parquet")
 
     graph = Graph.build_contiguity(inputdf, rook=False).assign_self_weight()
@@ -91,7 +92,7 @@ def process_enclosure_graph(region_id):
 
 
 def process_nodes_graph(region_id):
-    ## tessellation graphs
+    ## nodes graphs
     streets = gpd.read_parquet(data_dir + f"streets/streets_{region_id}.parquet")
 
     nx_graph = mm.gdf_to_nx(streets)
@@ -112,5 +113,4 @@ def process_nodes_graph(region_id):
 
 
 if __name__ == "__main__":
-    process_regions()
-    # process_regions_further()
+    process_all_regions_graphs()

@@ -7,7 +7,7 @@ import momepy as mm
 import numpy as np
 import pandas as pd
 from libpysal.graph import read_parquet
-from utils import partial_apply, partial_describe_reached_agg
+from core.utils import partial_apply, partial_describe_reached_agg
 
 regions_datadir = "/data/uscuni-ulce/"
 data_dir = "/data/uscuni-ulce/processed_data/"
@@ -73,8 +73,10 @@ def process_single_region(region_id):
 
         process_tessellation_chars(region_id)
         gc.collect()
-    except:
-        print("BIG PROBLEMS IN REGION", region_id)
+    
+    except Exception as e:
+        print("PROBLEM IN REGION", region_id)
+        print(e)
 
 
 def process_street_chars(region_id):
@@ -106,9 +108,8 @@ def process_street_chars(region_id):
     graph = mm.mean_node_dist(graph, name="mtdMDi", verbose=False)
 
     nodes, edges = mm.nx_to_gdf(graph, spatial_weights=False)
-    edges = edges.sort_values('geometry')
 
-    edges["sdsLen"] = streets.geometry.length
+    edges["sdsLen"] = edges.geometry.length
     street_orientation = mm.orientation(edges)
     edges["sssLin"] = mm.linearity(edges)
 
@@ -131,11 +132,11 @@ def process_street_chars(region_id):
     tessellation = gpd.read_parquet(
         data_dir + f"/tessellations/tessellation_{region_id}.parquet"
     )
-    tess_nid = mm.get_network_id(
-        tessellation, edges, network_id=edges.index, verbose=False
+    tess_nid = mm.get_nearest_street(
+        tessellation, edges
     )
-    streets["sdsAre"] = mm.describe_agg(
-        tessellation.geometry.area, tess_nid, streets.index, statistics=["count", "sum"]
+    edges["sdsAre"] = mm.describe_agg(
+        tessellation.geometry.area, tess_nid, edges.index, statistics=["count", "sum"]
     )["sum"]
 
     res = partial_describe_reached_agg(
@@ -151,25 +152,27 @@ def process_street_chars(region_id):
     edges["ldsAre"] = res["sum"]
 
     blg_nid = tess_nid[tess_nid.index >= 0]
-    edges["sisBpM"] = blg_nid.value_counts() / streets.length
+    edges["sisBpM"] = blg_nid.value_counts() / edges.length
 
     ## street building interactions
     buildings = gpd.read_parquet(data_dir + f"/buildings/buildings_{region_id}.parquet")
 
-    profile = mm.street_profile(streets, buildings, height=None, distance=3)
+    profile = mm.street_profile(edges, buildings, height=None, distance=3)
     edges["sdsSPW"] = profile["width"]
     edges["sdsSPO"] = profile["openness"]
     edges["sdsSWD"] = profile["width_deviation"]
 
-    ## nodes graph stuff
+    ## nodes tessellation interactions
     nodes_graph = read_parquet(graph_dir + f"nodes_graph_{region_id}_knn1.parquet")
 
     edges["nID"] = edges.index.values
-    buildings["nID"] = tess_nid[tess_nid.index >= 0]
-    tessellation["nodeID"] = mm.get_node_id(
-        buildings, nodes, edges, "nodeID", "nID", verbose=False
-    )
+    tessellation["nID"] = tess_nid
 
+    
+    tessellation["nodeID"] = mm.get_nearest_node(
+        tessellation, nodes, edges,  tessellation["nID"]
+    )
+    
     nodes["sddAre"] = mm.describe_agg(
         tessellation.geometry.area, tessellation["nodeID"]
     )["sum"]
@@ -320,8 +323,8 @@ def process_building_chars(region_id):
     streets = gpd.read_parquet(data_dir + f"/streets/streets_{region_id}.parquet")
     graph = mm.gdf_to_nx(streets)
     nodes, edges = mm.nx_to_gdf(graph, spatial_weights=False)
-    tess_nid = mm.get_network_id(
-        tessellation, edges, network_id=edges.index, verbose=False
+    tess_nid = mm.get_nearest_street(
+        tessellation, edges
     )
     blg_nid = tess_nid[tess_nid.index >= 0]
     street_orientation = mm.orientation(streets)
@@ -333,8 +336,8 @@ def process_building_chars(region_id):
         blg_nid[~blg_nid.isna()],
     )
 
-    buildings["nodeID"] = mm.get_node_id(
-        buildings, nodes, edges, "nodeID", "nID", verbose=False
+    buildings["nodeID"] = mm.get_nearest_node(
+        buildings, nodes, edges,  buildings["nID"]
     )
 
     buildings.to_parquet(chars_dir + f"buildings/chars_{region_id}.parquet")
@@ -384,8 +387,8 @@ def process_tessellation_chars(region_id):
     street_orientation = mm.orientation(streets)
     graph = mm.gdf_to_nx(streets)
     nodes, edges = mm.nx_to_gdf(graph, spatial_weights=False)
-    tess_nid = mm.get_network_id(
-        tessellation, edges, network_id=edges.index, verbose=False
+    tess_nid = mm.get_nearest_street(
+        tessellation, edges
     )
 
     tessellation["stcSAl"] = mm.street_alignment(
@@ -393,14 +396,11 @@ def process_tessellation_chars(region_id):
         street_orientation,
         tess_nid[~tess_nid.isna()].astype(int).values,
     )
+    
     edges["nID"] = edges.index.values
-    buildings["nID"] = tess_nid[tess_nid.index >= 0]
-    tessellation["nodeID"] = mm.get_node_id(
-        buildings, nodes, edges, "nodeID", "nID", verbose=False
-    )
-
-    tessellation["nodeID"] = mm.get_node_id(
-        buildings, nodes, edges, "nodeID", "nID", verbose=False
+    tessellation["nID"] = tess_nid[tess_nid.index >= 0]
+    tessellation["nodeID"] = mm.get_nearest_node(
+        tessellation, nodes, edges,  tessellation["nID"]
     )
 
     tessellation.to_parquet(chars_dir + f"tessellations/chars_{region_id}.parquet")
