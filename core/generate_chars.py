@@ -83,7 +83,7 @@ def process_street_chars(region_id):
     print("Processing streets")
     streets = gpd.read_parquet(data_dir + f"/streets/streets_{region_id}.parquet")
     
-    graph = mm.gdf_to_nx(streets)
+    graph = mm.gdf_to_nx(streets, preserve_index=True)
     graph = mm.node_degree(graph)
     graph = mm.subgraph(
         graph,
@@ -231,7 +231,6 @@ def process_enclosure_chars(region_id):
     res = mm.describe_agg(
         buildings.geometry.area,
         beid,
-        result_index=enclosures.index,
         statistics=["count", "sum"],
     )
 
@@ -321,7 +320,7 @@ def process_building_chars(region_id):
 
     ## building streets interactions
     streets = gpd.read_parquet(data_dir + f"/streets/streets_{region_id}.parquet")
-    graph = mm.gdf_to_nx(streets)
+    graph = mm.gdf_to_nx(streets, preserve_index=True)
     nodes, edges = mm.nx_to_gdf(graph, spatial_weights=False)
     tess_nid = mm.get_nearest_street(
         tessellation, edges
@@ -384,9 +383,9 @@ def process_tessellation_chars(region_id):
 
     ## tesselation street interactions
     streets = gpd.read_parquet(data_dir + f"/streets/streets_{region_id}.parquet")
-    street_orientation = mm.orientation(streets)
-    graph = mm.gdf_to_nx(streets)
+    graph = mm.gdf_to_nx(streets, preserve_index=True)
     nodes, edges = mm.nx_to_gdf(graph, spatial_weights=False)
+    street_orientation = mm.orientation(edges)
     tess_nid = mm.get_nearest_street(
         tessellation, edges
     )
@@ -398,7 +397,7 @@ def process_tessellation_chars(region_id):
     )
     
     edges["nID"] = edges.index.values
-    tessellation["nID"] = tess_nid[tess_nid.index >= 0]
+    tessellation["nID"] = tess_nid
     tessellation["nodeID"] = mm.get_nearest_node(
         tessellation, nodes, edges,  tessellation["nID"]
     )
