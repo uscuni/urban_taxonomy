@@ -56,8 +56,8 @@ def process_region_buildings(buildings):
         drop=True
     )
 
-    # set precision to speed up calc.
-    buildings["geometry"] = buildings.set_precision(0.001)
+    # # set precision to speed up calc.
+    # buildings["geometry"] = buildings.set_precision(0.001)
 
     ## merge buildings that overlap either 1) at least .10 percent or are smaller than 10m^2
     buildings = geoplanar.merge_overlaps(
@@ -84,9 +84,23 @@ def process_region_buildings(buildings):
         buildings, np.where(shrink.is_empty), largest=True
     )
     # drop non polygons
-    buildings = buildings.explode()
+    buildings = buildings.explode(ignore_index=True)
     buildings = buildings[buildings.geom_type == "Polygon"].reset_index(drop=True)
 
+    # fill gaps smaller than 10cm^2
+    gaps = geoplanar.gaps(buildings)
+    gaps = gaps[gaps.area < 0.1]
+    buildings = geoplanar.fill_gaps(buildings, gap_df=gaps, largest=None)
+    
+
+    # drop non polygons
+    buildings = buildings.explode(ignore_index=True)
+    buildings = buildings[buildings.geom_type == "Polygon"].reset_index(drop=True)
+
+
+    # gap filling without a precision grid has some issues
+    buildings = buildings[buildings.area > 1].reset_index(drop=True)
+    
     ##finally snap nearby buildings
     buildings["geometry"] = geoplanar.snap(buildings, threshold=0.5)
 

@@ -54,11 +54,11 @@ def run_parallel_regions():
 
     n_jobs = -1
     new = Parallel(n_jobs=n_jobs)(
-        delayed(process_single_region)(region_id) for region_id in parallel_regions
+        delayed(process_single_region_chars)(region_id) for region_id in parallel_regions
     )
 
 
-def process_single_region(region_id):
+def process_single_region_chars(region_id):
     print(datetime.datetime.now(), "----Processing ------", region_id)
 
     try:
@@ -246,25 +246,29 @@ def process_enclosure_chars(region_id):
 def process_building_chars(region_id):
     print("Processing buildings")
     buildings = gpd.read_parquet(data_dir + f"/buildings/buildings_{region_id}.parquet")
-
+    
+    ## need to use simplified polygons for these, due to precision grid issues
+    simplified_buildings = buildings.simplify(.1)
+    buildings["ssbCor"] = mm.corners(simplified_buildings)
+    buildings["ssbSqu"] = mm.squareness(simplified_buildings)
+    cencon = mm.centroid_corner_distance(simplified_buildings)
+    buildings["ssbCCM"] = cencon["mean"]
+    buildings["ssbCCD"] = cencon["std"]
+    del simplified_buildings
+    
     buildings["sdbAre"] = buildings.geometry.area
     buildings["sdbPer"] = buildings.geometry.length
     buildings["sdbCoA"] = mm.courtyard_area(buildings.geometry)
     buildings["ssbCCo"] = mm.circular_compactness(buildings)
-    buildings["ssbCor"] = mm.corners(buildings.geometry)
-    buildings["ssbSqu"] = mm.squareness(buildings.geometry)
     buildings["ssbERI"] = mm.equivalent_rectangular_index(buildings.geometry)
     buildings["ssbElo"] = mm.elongation(buildings.geometry)
-
-    cencon = mm.centroid_corner_distance(buildings)
-    buildings["ssbCCM"] = cencon["mean"]
-    buildings["ssbCCD"] = cencon["std"]
     buildings["stbOri"] = mm.orientation(buildings)
 
+    ### sometimes shared walls gives GEOS exceptions, region-12199 for example
     try:
         buildings["mtbSWR"] = mm.shared_walls(buildings) / buildings.geometry.length
-    except:
-        print("BIG PROBLEMS WITH BUILDINGS IN REGION", region_id)
+    except Exception as e:
+        print(e, region_id)
         buildings["mtbSWR"] = (
             mm.shared_walls(buildings.set_precision(1e-6)) / buildings.geometry.length
         )

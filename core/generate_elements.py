@@ -23,64 +23,71 @@ def process_all_regions_elements():
         if region_id != 69300:
             continue
 
-        n_workers = -1
-
-        print("----", "Processing region: ", region_id, datetime.datetime.now())
-        buildings = gpd.read_parquet(
-            data_dir + f"/buildings/buildings_{region_id}.parquet"
-        )
-        streets = gpd.read_parquet(data_dir + f"/streets/streets_{region_id}.parquet")
-        enclosures = generate_enclosures(buildings, streets)
-        tesselations = generate_tess(buildings, enclosures, n_workers=-1)
-
-        ### there are some edge cases for long and narrow buildings and
-        ## completely wrong polygons that are dropped by voronoi_frames
-        ## region 10 has this problem
-        tesselation_coverage = np.isin(
-            buildings.index.values, tesselations.index.values
-        )
-        if not tesselation_coverage.all():
-            print(
-                "Retrying tesselation with less buildings, potentially changing building data."
-            )
-            ## assume all missing buildings are problematic polygons, drop them and retry the tessellation
-            num_problem_buildings = (~tesselation_coverage).sum()
-            buildings = buildings[tesselation_coverage].reset_index()
-            enclosures = generate_enclosures(buildings, streets)
-            tesselations = generate_tess(buildings, enclosures, n_workers=-1)
-            tesselation_coverage = np.isin(
-                buildings.index.values, tesselations.index.values
-            )
-            # if this results in a correct tesselation, save the new region buildings
-            if tesselation_coverage.all():
-                print(
-                    "Dropping",
-                    num_problem_buildings,
-                    "buildings due to tesselation problems",
-                )
-                buildings.to_parquet(
-                    data_dir + f"buildings/buildings_{region_id}.parquet"
-                )
-
-        # quality check, there should be at least one tess cell per building in the end.
-        assert tesselation_coverage.all()
+        enclosures, tesselations = process_region_elements(region_id)
 
         enclosures.to_parquet(data_dir + f"enclosures/enclosure_{region_id}.parquet")
         print("Processed enclosures")
-        # free some memory
-        del buildings
-        del enclosures
-        del streets
-        gc.collect()
-
+        
         ## save files
         tesselations.to_parquet(
             data_dir + f"tessellations/tessellation_{region_id}.parquet"
         )
         print("processed tesselations")
 
+        del enclosures
         del tesselations
         gc.collect()
+
+
+def process_region_elements(region_id):
+    n_workers = -1
+
+    print("----", "Processing region: ", region_id, datetime.datetime.now())
+    buildings = gpd.read_parquet(
+        data_dir + f"/buildings/buildings_{region_id}.parquet"
+    )
+    streets = gpd.read_parquet(data_dir + f"/streets/streets_{region_id}.parquet")
+    enclosures = generate_enclosures(buildings, streets)
+    tesselations = generate_tess(buildings, enclosures, n_workers=-1)
+
+    ### there are some edge cases for long and narrow buildings and
+    ## completely wrong polygons that are dropped by voronoi_frames
+    ## region 10 has this problem
+    tesselation_coverage = np.isin(
+        buildings.index.values, tesselations.index.values
+    )
+    if not tesselation_coverage.all():
+        print(
+            "Retrying tesselation with less buildings, potentially changing building data."
+        )
+        ## assume all missing buildings are problematic polygons, drop them and retry the tessellation
+        num_problem_buildings = (~tesselation_coverage).sum()
+        buildings = buildings[tesselation_coverage].reset_index()
+        enclosures = generate_enclosures(buildings, streets)
+        tesselations = generate_tess(buildings, enclosures, n_workers=-1)
+        tesselation_coverage = np.isin(
+            buildings.index.values, tesselations.index.values
+        )
+        # if this results in a correct tesselation, save the new region buildings
+        if tesselation_coverage.all():
+            print(
+                "Dropping",
+                num_problem_buildings,
+                "buildings due to tesselation problems",
+            )
+            buildings.to_parquet(
+                data_dir + f"buildings/buildings_{region_id}.parquet"
+            )
+
+    # quality check, there should be at least one tess cell per building in the end.
+    assert tesselation_coverage.all()
+
+    # free some memory
+    del buildings
+    del streets
+    gc.collect()
+
+    return enclosures, tesselations
 
 
 def generate_tess(buildings, enclosures, n_workers=1):

@@ -25,12 +25,17 @@ def process_all_regions_graphs():
             region_id,
         )
 
-        process_tessellation_graph(region_id)
-        process_buildings_graph(region_id)
-        process_edges_graph(region_id)
-        process_enclosure_graph(region_id)
-        process_nodes_graph(region_id)
+        process_region_graphs(region_id)
+        
         gc.collect()
+
+
+def process_region_graphs(region_id):
+    process_tessellation_graph(region_id)
+    process_buildings_graph(region_id)
+    process_edges_graph(region_id)
+    process_enclosure_graph(region_id)
+    process_nodes_graph(region_id)
 
 
 def process_tessellation_graph(region_id):

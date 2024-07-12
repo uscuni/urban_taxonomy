@@ -278,6 +278,7 @@ used_keys = {
     "ltkOri": "orientation of enclosure",
     "ltkWNB": "perimeter-weighted neighbours of enclosure",
     "likWBB": "total of building areas within the enclosure, normalised by enclosure area",
+    "sdsAre": "area covered by edge-attached ETCs",
 }
 
 char_units = {
@@ -342,4 +343,5 @@ char_units = {
     "ltkOri": "degrees",
     "ltkWNB": "ratio",
     "likWBB": "ratio",
+    "sdsAre": "area-neigbourhood"
 }
