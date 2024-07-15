@@ -92,12 +92,10 @@ def process_region_buildings(buildings):
     gaps = gaps[gaps.area < 0.1]
     buildings = geoplanar.fill_gaps(buildings, gap_df=gaps, largest=None)
     
-
     # drop non polygons
     buildings = buildings.explode(ignore_index=True)
     buildings = buildings[buildings.geom_type == "Polygon"].reset_index(drop=True)
-
-
+    
     # gap filling without a precision grid has some issues
     buildings = buildings[buildings.area > 1].reset_index(drop=True)
     
