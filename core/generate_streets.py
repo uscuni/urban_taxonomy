@@ -58,6 +58,8 @@ def process_region_streets(region_hull, region_id):
                      'trunk_link',
                      'unclassified']
     streets = streets[streets['class'].isin(approved_roads)]
+    ## drop tunnels
+    streets = streets[~streets.road.str.contains('is_tunnel').fillna(False)]
     streets = streets.set_crs(epsg=4326).to_crs(epsg=3035)
     streets = streets.sort_values('id')[['id', 'geometry', 'class']].reset_index(drop=True)
     return streets

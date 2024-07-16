@@ -35,14 +35,15 @@ def process_all_regions_buildings():
             typed_dict, region_ids, region_hull, region_id
         )
 
-        buildings = process_region_buildings(buildings)
+        buildings = process_region_buildings(buildings, True)
 
         buildings.to_parquet(data_dir + f"buildings/buildings_{region_id}.parquet")
 
         del buildings
 
 
-def process_region_buildings(buildings):
+def process_region_buildings(buildings, simplify, simplification_tolerance=.1, merge_limit=25):
+    
     initial_shape = buildings.shape
 
     ## fix invalid geometry
@@ -56,12 +57,13 @@ def process_region_buildings(buildings):
         drop=True
     )
 
-    # # set precision to speed up calc.
-    # buildings["geometry"] = buildings.set_precision(0.001)
+    ## simplify geometry - most eubucco data has topological issues
+    if simplify:
+        buildings["geometry"] = buildings.simplify(simplification_tolerance)
 
-    ## merge buildings that overlap either 1) at least .10 percent or are smaller than 10m^2
+    ## merge buildings that overlap either 1) at least .10 percent or are smaller than 30m^2
     buildings = geoplanar.merge_overlaps(
-        buildings, merge_limit=10, overlap_limit=0.1
+        buildings, merge_limit=merge_limit, overlap_limit=0.1
     )
 
     ## drop remaining overlaps
@@ -79,7 +81,7 @@ def process_region_buildings(buildings):
     buildings = buildings[buildings.geom_type == "Polygon"].reset_index(drop=True)
 
     # merge touching collapsing buildings
-    shrink = buildings.buffer(-0.4, resolution=2)
+    shrink = buildings.buffer(-0.5, resolution=2)
     buildings = geoplanar.merge_touching(
         buildings, np.where(shrink.is_empty), largest=True
     )
@@ -87,24 +89,11 @@ def process_region_buildings(buildings):
     buildings = buildings.explode(ignore_index=True)
     buildings = buildings[buildings.geom_type == "Polygon"].reset_index(drop=True)
 
-    # fill gaps smaller than 10cm^2
-    gaps = geoplanar.gaps(buildings)
-    gaps = gaps[gaps.area < 0.1]
-    buildings = geoplanar.fill_gaps(buildings, gap_df=gaps, largest=None)
-    
-    # drop non polygons
-    buildings = buildings.explode(ignore_index=True)
-    buildings = buildings[buildings.geom_type == "Polygon"].reset_index(drop=True)
-    
-    # gap filling without a precision grid has some issues
-    buildings = buildings[buildings.area > 1].reset_index(drop=True)
-    
-    ##finally snap nearby buildings
-    buildings["geometry"] = geoplanar.snap(buildings, threshold=0.5)
-
     ## need one more pass to ensure only valid geometries
-    buildings["geometry"] = buildings.make_valid()
-    buildings = buildings[buildings.geom_type == "Polygon"].reset_index(drop=True)
+    if simplify:
+        buildings["geometry"] = buildings.simplify(simplification_tolerance)
+        buildings["geometry"] = buildings.make_valid()
+        buildings = buildings[buildings.geom_type == "Polygon"].reset_index(drop=True)
 
     print(
         "Final polygons: ",

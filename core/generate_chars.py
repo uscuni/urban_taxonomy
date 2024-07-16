@@ -247,7 +247,15 @@ def process_building_chars(region_id):
     print("Processing buildings")
     buildings = gpd.read_parquet(data_dir + f"/buildings/buildings_{region_id}.parquet")
     
-    ## need to use simplified polygons for these, due to precision grid issues
+    buildings["ssbCCo"] = mm.circular_compactness(buildings)
+    buildings["ssbCor"] = mm.corners(buildings)
+    buildings.loc[buildings['ssbCCo'] >= .95, 'ssbCor'] = 0
+    buildings['ssbSqu'] = mm.squareness(buildings)
+    buildings.loc[buildings['ssbCCo'] >= .95, 'ssbSqu'] = 90
+    cencon = mm.centroid_corner_distance(buildings)
+    buildings["ssbCCM"] = cencon["mean"]
+    buildings["ssbCCD"] = cencon["std"]
+    
     simplified_buildings = buildings.simplify(.1)
     buildings["ssbCor"] = mm.corners(simplified_buildings)
     buildings["ssbSqu"] = mm.squareness(simplified_buildings)
@@ -266,11 +274,11 @@ def process_building_chars(region_id):
 
     ### sometimes shared walls gives GEOS exceptions, region-12199 for example
     try:
-        buildings["mtbSWR"] = mm.shared_walls(buildings) / buildings.geometry.length
+        buildings["mtbSWR"] = mm.shared_walls(buildings, strict=False, tolerance=.15) / buildings.geometry.length
     except Exception as e:
         print(e, region_id)
         buildings["mtbSWR"] = (
-            mm.shared_walls(buildings.set_precision(1e-6)) / buildings.geometry.length
+            mm.shared_walls(buildings.set_precision(1e-6), strict=False, tolerance=.15) / buildings.geometry.length
         )
 
     buildings_q1 = read_parquet(graph_dir + f"building_graph_{region_id}_knn1.parquet")

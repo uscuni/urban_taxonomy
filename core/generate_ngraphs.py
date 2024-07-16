@@ -58,7 +58,8 @@ def process_tessellation_graph(region_id):
 def process_buildings_graph(region_id):
     buildings = gpd.read_parquet(data_dir + f"/buildings/buildings_{region_id}.parquet")
 
-    graph = Graph.build_fuzzy_contiguity(buildings, buffer=1e-6).assign_self_weight()
+    ## has to be higher than the simplification value
+    graph = Graph.build_fuzzy_contiguity(buildings, buffer=.25).assign_self_weight()
 
     graph.to_parquet(
         data_dir + "neigh_graphs/" + f"building_graph_{region_id}_knn1.parquet"
