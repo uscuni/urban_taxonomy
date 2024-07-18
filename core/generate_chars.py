@@ -248,21 +248,13 @@ def process_building_chars(region_id):
     buildings = gpd.read_parquet(data_dir + f"/buildings/buildings_{region_id}.parquet")
     
     buildings["ssbCCo"] = mm.circular_compactness(buildings)
-    buildings["ssbCor"] = mm.corners(buildings)
+    buildings["ssbCor"] = mm.corners(buildings, eps=15)
     buildings.loc[buildings['ssbCCo'] >= .95, 'ssbCor'] = 0
-    buildings['ssbSqu'] = mm.squareness(buildings)
+    buildings['ssbSqu'] = mm.squareness(buildings, eps=15)
     buildings.loc[buildings['ssbCCo'] >= .95, 'ssbSqu'] = 90
-    cencon = mm.centroid_corner_distance(buildings)
+    cencon = mm.centroid_corner_distance(buildings, eps=15)
     buildings["ssbCCM"] = cencon["mean"]
     buildings["ssbCCD"] = cencon["std"]
-    
-    simplified_buildings = buildings.simplify(.1)
-    buildings["ssbCor"] = mm.corners(simplified_buildings)
-    buildings["ssbSqu"] = mm.squareness(simplified_buildings)
-    cencon = mm.centroid_corner_distance(simplified_buildings)
-    buildings["ssbCCM"] = cencon["mean"]
-    buildings["ssbCCD"] = cencon["std"]
-    del simplified_buildings
     
     buildings["sdbAre"] = buildings.geometry.area
     buildings["sdbPer"] = buildings.geometry.length

@@ -1,36 +1,38 @@
 import numpy as np
 import pandas as pd
 
-## each of this is an enclosure ID
-focus_areas = {
-    3103: "karlin",
-    13295: "vinohrady",
-    909: "mala strani",
-    4429: "holyne",
-    4406: "housing estate",
-    2265: "stare mesto",
-    1544: "nusle",
-    18215: "malesice",
-}
-
-
-def generate_enc_groups(
-    tessellation, enclosures, include_random_sample=False, random_sample_size=1000
-):
-    """Create a buffer around a specific enclosure, then return all tessellation cell ids inside the buffer.
+def generate_validation_groups(
+    tessellation, buffer=1000, include_random_sample=False, random_sample_size=1000): 
+    """Create a buffer around a specific point, then return all tessellation cell ids inside the buffer.
     Also add random points to test dimensionality reduction/clustering algorithm performance."""
-    buffers = enclosures.loc[list(focus_areas.keys())].buffer(500)
-    group_dict = pd.Series(focus_areas).reset_index(drop=True).to_dict()
+    xs = [4639418.73732028, 4638766.14693257, 4636102.61687298,
+           4632830.04468479, 4634059.47490346, 4637037.54752477,
+           4638734.18270978, 4644599.25531156]
+    ys = [3007593.31449975, 3005492.26689675, 3006724.3212875 ,
+           2999944.25664089, 3000331.73031417, 3006410.00813384,
+           3003706.91345186, 3006464.38673084]
+    names = ['karlin',
+     'vinohrady',
+     'mala strana',
+     'holyne',
+     'housing estate',
+     'stare mesto',
+     'nusle',
+     'malesice']
+    buffers = gpd.GeoSeries.from_xy(xs, ys, crs=3035).buffer(buffer)
+    group_dict = pd.Series(names)
+    
+    
     areas, tids = tessellation.sindex.query(buffers, predicate="intersects")
     tess_groups = pd.Series(areas, index=tessellation.index[tids]).replace(group_dict)
-
+    
     if include_random_sample:
         random_sample_index = tessellation.sample(
             random_sample_size, random_state=1
         ).index
         random_sample = pd.Series("random", index=random_sample_index)
         tess_groups = pd.concat((tess_groups, random_sample))
-
+    
     return tess_groups[~tess_groups.index.duplicated()]
 
 

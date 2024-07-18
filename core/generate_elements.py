@@ -110,7 +110,15 @@ def generate_tess(buildings, enclosures, n_workers=1):
     return tessellation
 
 
+
 def generate_enclosures(buildings, streets):
+    ## generate additional_boundaries
+    buffered_buildings = mm.buffered_limit(buildings, buffer='adaptive')
+    enclosures = mm.enclosures(streets, limit=buffered_buildings, clip=True)
+    return enclosures
+
+
+def generate_enclosures_representative_points(buildings, streets):
     ## generate additional_boundaries
     min_buffer: float = 0
     max_buffer: float = 100
@@ -122,7 +130,7 @@ def generate_enclosures(buildings, streets):
     buffer = np.clip(max_dist / 2 + max_dist * 0.1, min_buffer, max_buffer).values
     buffered_buildings = buildings.buffer(buffer, resolution=2).union_all()
 
-    enclosures = mm.enclosures(streets, limit=buffered_buildings)
+    enclosures = mm.enclosures(streets, limit=buffered_buildings, clip=True)
     return enclosures
 
 
