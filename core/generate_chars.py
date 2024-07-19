@@ -274,8 +274,8 @@ def process_building_chars(region_id):
         )
 
     buildings_q1 = read_parquet(graph_dir + f"building_graph_{region_id}_knn1.parquet")
-    buildings["libNCo"] = mm.courtyards(buildings, buildings_q1)
-    buildings["ldbPWL"] = mm.perimeter_wall(buildings, buildings_q1)
+    buildings["libNCo"] = mm.courtyards(buildings, buildings_q1, buffer=.25)
+    buildings["ldbPWL"] = mm.perimeter_wall(buildings, buildings_q1, buffer=.25)
 
     ## building tessellation interactions
 
