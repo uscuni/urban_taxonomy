@@ -9,13 +9,6 @@ import pandas as pd
 from libpysal.graph import read_parquet
 from core.utils import partial_apply, partial_describe_reached_agg
 
-regions_datadir = "/data/uscuni-ulce/"
-data_dir = "/data/uscuni-ulce/processed_data/"
-graph_dir = "/data/uscuni-ulce/processed_data/neigh_graphs/"
-chars_dir = "/data/uscuni-ulce/processed_data/chars/"
-eubucco_files = glob.glob(regions_datadir + "eubucco_raw/*")
-
-
 def process_regions():
     region_hulls = gpd.read_parquet(
         regions_datadir + "regions/" + "regions_hull.parquet"
@@ -58,20 +51,60 @@ def run_parallel_regions():
     )
 
 
-def process_single_region_chars(region_id):
+def process_single_region_chars(
+    region_id,
+    graph_dir,
+    buildings_dir,
+    streets_dir,
+    enclosures_dir,
+    tessellations_dir,
+    chars_dir
+):
     print(datetime.datetime.now(), "----Processing ------", region_id)
 
     try:
-        process_street_chars(region_id)
+        process_street_chars(
+            region_id,
+            graph_dir,
+            buildings_dir,
+            streets_dir,
+            enclosures_dir,
+            tessellations_dir,
+            chars_dir
+        )
         gc.collect()
 
-        process_enclosure_chars(region_id)
+        process_enclosure_chars(
+            region_id,
+            graph_dir,
+            buildings_dir,
+            streets_dir,
+            enclosures_dir,
+            tessellations_dir,
+            chars_dir
+        )
         gc.collect()
 
-        process_building_chars(region_id)
+        process_building_chars(
+            region_id,
+            graph_dir,
+            buildings_dir,
+            streets_dir,
+            enclosures_dir,
+            tessellations_dir,
+            chars_dir
+        )
         gc.collect()
 
-        process_tessellation_chars(region_id)
+        process_tessellation_chars(
+            region_id,
+            graph_dir,
+            buildings_dir,
+            streets_dir,
+            enclosures_dir,
+            tessellations_dir,
+            chars_dir
+        )
         gc.collect()
     
     except Exception as e:
@@ -79,9 +112,17 @@ def process_single_region_chars(region_id):
         print(e)
 
 
-def process_street_chars(region_id):
+def process_street_chars(
+    region_id,
+    graph_dir,
+    buildings_dir,
+    streets_dir,
+    enclosures_dir,
+    tessellations_dir,
+    chars_dir
+):
     print("Processing streets")
-    streets = gpd.read_parquet(data_dir + f"/streets/streets_{region_id}.parquet")
+    streets = gpd.read_parquet(streets_dir + f"/streets_{region_id}.parquet")
     
     graph = mm.gdf_to_nx(streets, preserve_index=True)
     graph = mm.node_degree(graph)
@@ -130,7 +171,7 @@ def process_street_chars(region_id):
 
     ## tesselation street interactions
     tessellation = gpd.read_parquet(
-        data_dir + f"/tessellations/tessellation_{region_id}.parquet"
+        tessellations_dir + f"tessellation_{region_id}.parquet"
     )
     tess_nid = mm.get_nearest_street(
         tessellation, edges
@@ -155,7 +196,7 @@ def process_street_chars(region_id):
     edges["sisBpM"] = blg_nid.value_counts() / edges.length
 
     ## street building interactions
-    buildings = gpd.read_parquet(data_dir + f"/buildings/buildings_{region_id}.parquet")
+    buildings = gpd.read_parquet(buildings_dir + f"buildings_{region_id}.parquet")
 
     profile = mm.street_profile(edges, buildings, height=None, distance=3)
     edges["sdsSPW"] = profile["width"]
@@ -194,8 +235,8 @@ def process_street_chars(region_id):
         },
         inplace=True,
     )
-    nodes.to_parquet(chars_dir + f"nodes/chars_{region_id}.parquet")
-    edges.to_parquet(chars_dir + f"streets/chars_{region_id}.parquet")
+    nodes.to_parquet(chars_dir + f"nodes_chars_{region_id}.parquet")
+    edges.to_parquet(chars_dir + f"streets_chars_{region_id}.parquet")
 
     del edges
     del nodes
@@ -203,10 +244,18 @@ def process_street_chars(region_id):
     del buildings
 
 
-def process_enclosure_chars(region_id):
+def process_enclosure_chars(
+    region_id,
+    graph_dir,
+    buildings_dir,
+    streets_dir,
+    enclosures_dir,
+    tessellations_dir,
+    chars_dir
+):
     print("Processing enclosures")
     enclosures = gpd.read_parquet(
-        data_dir + f"/enclosures/enclosure_{region_id}.parquet"
+        enclosures_dir + f"enclosure_{region_id}.parquet"
     )
     enclosures["ldkAre"] = enclosures.geometry.area
     enclosures["ldkPer"] = enclosures.geometry.length
@@ -219,9 +268,9 @@ def process_enclosure_chars(region_id):
     enclosures["ltkWNB"] = mm.neighbors(enclosures, blo_q1, weighted=True)
 
     ## buildings enclosures interactions
-    buildings = gpd.read_parquet(data_dir + f"/buildings/buildings_{region_id}.parquet")
+    buildings = gpd.read_parquet(buildings_dir + f"buildings_{region_id}.parquet")
     tessellation = gpd.read_parquet(
-        data_dir + f"/tessellations/tessellation_{region_id}.parquet"
+        tessellations_dir + f"tessellation_{region_id}.parquet"
     )
 
     beid = buildings.merge(
@@ -236,16 +285,24 @@ def process_enclosure_chars(region_id):
 
     enclosures["likWBB"] = res["sum"] / enclosures.geometry.area
 
-    enclosures.to_parquet(chars_dir + f"enclosures/chars_{region_id}.parquet")
+    enclosures.to_parquet(chars_dir + f"enclosures_chars_{region_id}.parquet")
 
     del enclosures
     del blo_q1
     del tessellation
 
 
-def process_building_chars(region_id):
+def process_building_chars(
+    region_id,
+    graph_dir,
+    buildings_dir,
+    streets_dir,
+    enclosures_dir,
+    tessellations_dir,
+    chars_dir
+):
     print("Processing buildings")
-    buildings = gpd.read_parquet(data_dir + f"/buildings/buildings_{region_id}.parquet")
+    buildings = gpd.read_parquet(buildings_dir + f"buildings_{region_id}.parquet")
     
     buildings["ssbCCo"] = mm.circular_compactness(buildings)
     buildings["ssbCor"] = mm.corners(buildings, eps=15)
@@ -315,7 +372,7 @@ def process_building_chars(region_id):
     gc.collect()
 
     tessellation = gpd.read_parquet(
-        data_dir + f"/tessellations/tessellation_{region_id}.parquet"
+        tessellations_dir + f"tessellation_{region_id}.parquet"
     )
     tessellation["stcOri"] = mm.orientation(tessellation)
     buildings["stbCeA"] = mm.cell_alignment(
@@ -323,7 +380,7 @@ def process_building_chars(region_id):
     )
 
     ## building streets interactions
-    streets = gpd.read_parquet(data_dir + f"/streets/streets_{region_id}.parquet")
+    streets = gpd.read_parquet(streets_dir + f"streets_{region_id}.parquet")
     graph = mm.gdf_to_nx(streets, preserve_index=True)
     nodes, edges = mm.nx_to_gdf(graph, spatial_weights=False)
     tess_nid = mm.get_nearest_street(
@@ -343,17 +400,25 @@ def process_building_chars(region_id):
         buildings, nodes, edges,  buildings["nID"]
     )
 
-    buildings.to_parquet(chars_dir + f"buildings/chars_{region_id}.parquet")
+    buildings.to_parquet(chars_dir + f"buildings_chars_{region_id}.parquet")
     del buildings
     del nodes
     del edges
     gc.collect()
 
 
-def process_tessellation_chars(region_id):
+def process_tessellation_chars(
+    region_id,
+    graph_dir,
+    buildings_dir,
+    streets_dir,
+    enclosures_dir,
+    tessellations_dir,
+    chars_dir
+):
     print("Processing tessellation")
     tessellation = gpd.read_parquet(
-        data_dir + f"/tessellations/tessellation_{region_id}.parquet"
+        tessellations_dir + f"/tessellation_{region_id}.parquet"
     )
 
     tessellation["stcOri"] = mm.orientation(tessellation)
@@ -382,11 +447,11 @@ def process_tessellation_chars(region_id):
     )
 
     # tesselation buildings interactions
-    buildings = gpd.read_parquet(data_dir + f"/buildings/buildings_{region_id}.parquet")
+    buildings = gpd.read_parquet(buildings_dir + f"buildings_{region_id}.parquet")
     tessellation["sicCAR"] = buildings.geometry.area / tessellation.geometry.area
 
     ## tesselation street interactions
-    streets = gpd.read_parquet(data_dir + f"/streets/streets_{region_id}.parquet")
+    streets = gpd.read_parquet(streets_dir + f"streets_{region_id}.parquet")
     graph = mm.gdf_to_nx(streets, preserve_index=True)
     nodes, edges = mm.nx_to_gdf(graph, spatial_weights=False)
     street_orientation = mm.orientation(edges)
@@ -406,7 +471,7 @@ def process_tessellation_chars(region_id):
         tessellation, nodes, edges,  tessellation["nID"]
     )
 
-    tessellation.to_parquet(chars_dir + f"tessellations/chars_{region_id}.parquet")
+    tessellation.to_parquet(chars_dir + f"tessellations_chars_{region_id}.parquet")
     del tessellation
     del buildings
     del graph

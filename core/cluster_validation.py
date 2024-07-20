@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import geopandas as gpd
 
 def generate_validation_groups(
     tessellation, buffer=1000, include_random_sample=False, random_sample_size=1000): 

@@ -1,6 +1,7 @@
 import momepy as mm
 import numpy as np
 import pandas as pd
+import geopandas as gpd
 from libpysal.graph import Graph
 
 __all__ = [

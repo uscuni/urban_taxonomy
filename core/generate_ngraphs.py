@@ -30,23 +30,30 @@ def process_all_regions_graphs():
         gc.collect()
 
 
-def process_region_graphs(region_id):
-    process_tessellation_graph(region_id)
-    process_buildings_graph(region_id)
-    process_edges_graph(region_id)
-    process_enclosure_graph(region_id)
-    process_nodes_graph(region_id)
+def process_region_graphs(
+    region_id,
+    graph_dir,
+    buildings_dir,
+    streets_dir,
+    enclosures_dir,
+    tessellations_dir,
+):
+    process_tessellation_graph(region_id, graph_dir, tessellations_dir)
+    process_buildings_graph(region_id, graph_dir, buildings_dir)
+    process_edges_graph(region_id, graph_dir, streets_dir)
+    process_enclosure_graph(region_id, graph_dir, enclosures_dir)
+    process_nodes_graph(region_id, graph_dir, streets_dir)
 
 
-def process_tessellation_graph(region_id):
+def process_tessellation_graph(region_id, graph_dir, tessellations_dir):
     ## tessellation graphs
     tessellation = gpd.read_parquet(
-        data_dir + f"tessellations/tessellation_{region_id}.parquet"
+        tessellations_dir + f"tessellation_{region_id}.parquet"
     )
 
     graph = Graph.build_fuzzy_contiguity(tessellation, buffer=1e-6).assign_self_weight()
     graph.to_parquet(
-        data_dir + "neigh_graphs/" + f"tessellation_graph_{region_id}_knn1.parquet"
+        graph_dir + f"tessellation_graph_{region_id}_knn1.parquet"
     )
     print("Built tess graph knn=1")
 
@@ -55,14 +62,14 @@ def process_tessellation_graph(region_id):
     gc.collect()
 
 
-def process_buildings_graph(region_id):
-    buildings = gpd.read_parquet(data_dir + f"/buildings/buildings_{region_id}.parquet")
+def process_buildings_graph(region_id, graph_dir, buildings_dir):
+    buildings = gpd.read_parquet(buildings_dir + f"buildings_{region_id}.parquet")
 
-    ## has to be higher than the simplification value
+    ## the buffer has to be higher than the simplification value
     graph = Graph.build_fuzzy_contiguity(buildings, buffer=.25).assign_self_weight()
 
     graph.to_parquet(
-        data_dir + "neigh_graphs/" + f"building_graph_{region_id}_knn1.parquet"
+        graph_dir + f"building_graph_{region_id}_knn1.parquet"
     )
     print("Built buildings graph knn=1")
 
@@ -71,13 +78,13 @@ def process_buildings_graph(region_id):
     gc.collect()
 
 
-def process_edges_graph(region_id):
+def process_edges_graph(region_id, graph_dir, streets_dir):
     ### streets graph
-    streets = gpd.read_parquet(data_dir + f"/streets/streets_{region_id}.parquet")
+    streets = gpd.read_parquet(streets_dir + f"streets_{region_id}.parquet")
 
     graph = Graph.build_contiguity(streets, rook=False).assign_self_weight()
     graph.to_parquet(
-        data_dir + "neigh_graphs/" + f"street_graph_{region_id}_knn1.parquet"
+        graph_dir + f"street_graph_{region_id}_knn1.parquet"
     )
     print("Built streets graph knn=1")
 
@@ -86,20 +93,20 @@ def process_edges_graph(region_id):
     gc.collect()
 
 
-def process_enclosure_graph(region_id):
+def process_enclosure_graph(region_id, graph_dir, enclosures_dir):
     ## enclosure graphs
-    inputdf = gpd.read_parquet(data_dir + f"enclosures/enclosure_{region_id}.parquet")
+    inputdf = gpd.read_parquet(enclosures_dir + f"enclosure_{region_id}.parquet")
 
     graph = Graph.build_contiguity(inputdf, rook=False).assign_self_weight()
     graph.to_parquet(
-        data_dir + "neigh_graphs/" + f"enclosure_graph_{region_id}_knn1.parquet"
+        graph_dir + f"enclosure_graph_{region_id}_knn1.parquet"
     )
     print("Built enclosure graph knn=1")
 
 
-def process_nodes_graph(region_id):
+def process_nodes_graph(region_id, graph_dir, streets_dir):
     ## nodes graphs
-    streets = gpd.read_parquet(data_dir + f"streets/streets_{region_id}.parquet")
+    streets = gpd.read_parquet(streets_dir + f"streets_{region_id}.parquet")
 
     nx_graph = mm.gdf_to_nx(streets)
     nx_graph = mm.node_degree(nx_graph)
@@ -107,7 +114,7 @@ def process_nodes_graph(region_id):
 
     graph = Graph.from_W(w)
     graph.to_parquet(
-        data_dir + "neigh_graphs/" + f"nodes_graph_{region_id}_knn1.parquet"
+        graph_dir + f"nodes_graph_{region_id}_knn1.parquet"
     )
     print("Built nodes graph knn=1")
 

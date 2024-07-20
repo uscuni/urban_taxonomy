@@ -7,12 +7,9 @@ import momepy as mm
 import numpy as np
 from libpysal.graph import Graph
 
-regions_datadir = "/data/uscuni-ulce/"
-data_dir = "/data/uscuni-ulce/processed_data/"
-eubucco_files = glob.glob(regions_datadir + "eubucco_raw/*")
 
+def process_all_regions_elements(data_dir, regions_datadir):
 
-def process_all_regions_elements():
     region_hulls = gpd.read_parquet(
         regions_datadir + "regions/" + "regions_hull.parquet"
     )
@@ -39,14 +36,14 @@ def process_all_regions_elements():
         gc.collect()
 
 
-def process_region_elements(region_id):
+def process_region_elements(buildings_data_dir, streets_data_dir, region_id):
     n_workers = -1
 
     print("----", "Processing region: ", region_id, datetime.datetime.now())
     buildings = gpd.read_parquet(
-        data_dir + f"/buildings/buildings_{region_id}.parquet"
+        buildings_data_dir + f"buildings_{region_id}.parquet"
     )
-    streets = gpd.read_parquet(data_dir + f"/streets/streets_{region_id}.parquet")
+    streets = gpd.read_parquet(streets_data_dir + f"streets_{region_id}.parquet")
     enclosures = generate_enclosures(buildings, streets)
     tesselations = generate_tess(buildings, enclosures, n_workers=-1)
 
@@ -76,7 +73,7 @@ def process_region_elements(region_id):
                 "buildings due to tesselation problems",
             )
             buildings.to_parquet(
-                data_dir + f"buildings/buildings_{region_id}.parquet"
+                buildings_data_dir + f"buildings_{region_id}.parquet"
             )
 
     # quality check, there should be at least one tess cell per building in the end.
