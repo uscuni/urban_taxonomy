@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import geopandas as gpd
+from sklearn.ensemble import RandomForestClassifier
 
 def generate_validation_groups(
     tessellation, buffer=1000, include_random_sample=False, random_sample_size=1000): 
@@ -64,3 +65,23 @@ def pprint_cluster_percentiles(X_train, labels):
         k: "{:.4f}" for k in cluster_stats.columns.values
     }  # column col A to 2 decimals
     return cluster_stats.style.format(f).background_gradient(axis=1, cmap="BuGn")
+
+def colored_crosstab(vals1, vals2):
+    ct = pd.crosstab(vals1, vals2)
+    return ct.style.background_gradient(axis=1, cmap="BuGn")
+
+def get_feature_importance(input_data, clusters):
+    imps = pd.DataFrame()
+    
+    for cluster in np.unique(clusters):
+        
+        cluster_bool = clusters == cluster
+        
+        clf = RandomForestClassifier(n_estimators=10, n_jobs=-1, random_state=42, verbose=1)
+        clf = clf.fit(input_data.values, cluster_bool)
+    
+        importances = pd.Series(clf.feature_importances_, index=input_data.columns).sort_values(ascending=False)
+    
+        imps[f'cluster_{cluster}'] = importances.head(50).index.values
+        imps[f'cluster_{cluster}_vals'] = importances.head(50).values
+    return imps
