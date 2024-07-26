@@ -105,31 +105,6 @@ def partial_describe_reached_agg(
     return res
 
 
-def standardize_features(vals):
-    return (vals - vals.min(axis=0)) / (vals.max(axis=0) - vals.min(axis=0))
-
-
-def pprint_cluster_percentiles(X_train, labels):
-    """style the pandas output on a per row basis"""
-    cluster_stats = X_train.groupby(labels).describe()
-    cluster_stats = cluster_stats.loc[:, (slice(None), ["25%", "50%", "75%"])].T
-    counts = X_train.groupby(kmeans_label).size()
-    cluster_stats.loc[("count", "count"), :] = counts.values
-    extended_col_names = {}
-    for c in X_train.columns.values:
-        if "_" in c:
-            orig_key = c.split("_")[0]
-            attach = c.split("_")[1]
-            extended_col_names[c] = used_keys[orig_key] + " (" + attach + ")"
-        else:
-            extended_col_names[c] = used_keys[c]
-    cluster_stats = cluster_stats.rename(extended_col_names, axis=0)
-    f = {
-        k: "{:.4f}" for k in cluster_stats.columns.values
-    }  # column col A to 2 decimals
-    return cluster_stats.style.format(f).background_gradient(axis=1, cmap="BuGn")
-
-
 char_names = {
     "sdbAre": "area of building",
     "sdbPer": "perimeter of building",

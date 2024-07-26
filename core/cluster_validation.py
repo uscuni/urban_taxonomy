@@ -66,9 +66,11 @@ def pprint_cluster_percentiles(X_train, labels):
     }  # column col A to 2 decimals
     return cluster_stats.style.format(f).background_gradient(axis=1, cmap="BuGn")
 
+
 def colored_crosstab(vals1, vals2):
     ct = pd.crosstab(vals1, vals2)
     return ct.style.background_gradient(axis=1, cmap="BuGn")
+
 
 def get_feature_importance(input_data, clusters):
     imps = pd.DataFrame()
