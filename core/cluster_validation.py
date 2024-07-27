@@ -2,17 +2,19 @@ import numpy as np
 import pandas as pd
 import geopandas as gpd
 from sklearn.ensemble import RandomForestClassifier
+from lonboard.colormap import apply_categorical_cmap
+from palettable.colorbrewer.qualitative import Set3_12
 
-def generate_validation_groups(
-    tessellation, buffer=1000, include_random_sample=False, random_sample_size=1000): 
+def generate_neigbhourhood_groups(
+    tessellation, buffer=400, include_random_sample=False, random_sample_size=1000): 
     """Create a buffer around a specific point, then return all tessellation cell ids inside the buffer.
     Also add random points to test dimensionality reduction/clustering algorithm performance."""
     xs = [4639418.73732028, 4638766.14693257, 4636102.61687298,
            4632830.04468479, 4634059.47490346, 4637037.54752477,
-           4638734.18270978, 4644599.25531156]
+           4638734.18270978, 4644599.25531156, 4636980.614170434]
     ys = [3007593.31449975, 3005492.26689675, 3006724.3212875 ,
            2999944.25664089, 3000331.73031417, 3006410.00813384,
-           3003706.91345186, 3006464.38673084]
+           3003706.91345186, 3006464.38673084, 3007018.3956980314]
     names = ['karlin',
      'vinohrady',
      'mala strana',
@@ -20,10 +22,10 @@ def generate_validation_groups(
      'housing estate',
      'stare mesto',
      'nusle',
-     'malesice']
+     'malesice',
+            'josefov']
     buffers = gpd.GeoSeries.from_xy(xs, ys, crs=3035).buffer(buffer)
     group_dict = pd.Series(names)
-    
     
     areas, tids = tessellation.sindex.query(buffers, predicate="intersects")
     tess_groups = pd.Series(areas, index=tessellation.index[tids]).replace(group_dict)
@@ -71,6 +73,11 @@ def colored_crosstab(vals1, vals2):
     ct = pd.crosstab(vals1, vals2)
     return ct.style.background_gradient(axis=1, cmap="BuGn")
 
+def print_distance(groups, metric='euclidean'):
+    from scipy.spatial.distance import pdist, squareform
+    vals = squareform(pdist(groups, metric=metric))
+    df = pd.DataFrame(vals, index=groups.index, columns=groups.index)
+    return df.style.background_gradient(axis=1, cmap="BuGn")
 
 def get_feature_importance(input_data, clusters):
     imps = pd.DataFrame()
@@ -87,3 +94,25 @@ def get_feature_importance(input_data, clusters):
         imps[f'cluster_{cluster}'] = importances.head(50).index.values
         imps[f'cluster_{cluster}_vals'] = importances.head(50).values
     return imps
+
+
+def get_color(labels_to_color):
+
+    import glasbey
+    
+    def hex_to_rgb(hexa):
+        return tuple(int(hexa[i : i + 2], 16) for i in (0, 2, 4))
+    
+    if labels_to_color.max() > 12:
+        gb_cols = glasbey.extend_palette(
+            Set3_12.hex_colors, palette_size=np.unique(labels_to_color).shape[0] + 1
+        )
+    else:
+        gb_cols = Set3_12.hex_colors
+    
+    gb_cols = [hex_to_rgb(c[1:]) for c in gb_cols]
+    
+    colors = apply_categorical_cmap(
+        labels_to_color, cmap=dict(zip(np.unique(labels_to_color), gb_cols, strict=False))
+    )
+    return colors
