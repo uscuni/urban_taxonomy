@@ -96,7 +96,7 @@ def get_feature_importance(input_data, clusters):
     return imps
 
 
-def get_color(labels_to_color):
+def get_color(labels_to_color, noise_color=[0, 0, 0]):
 
     import glasbey
     
@@ -115,4 +115,5 @@ def get_color(labels_to_color):
     colors = apply_categorical_cmap(
         labels_to_color, cmap=dict(zip(np.unique(labels_to_color), gb_cols, strict=False))
     )
+    colors[labels_to_color == -1] = noise_color
     return colors
