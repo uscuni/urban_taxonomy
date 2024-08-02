@@ -7,7 +7,7 @@ import momepy as mm
 import numpy as np
 import pandas as pd
 from libpysal.graph import read_parquet
-from core.utils import partial_apply, partial_describe_reached_agg
+from core.utils import partial_apply, partial_describe_reached_agg, partial_mean_intb_dist
 
 def process_regions():
     region_hulls = gpd.read_parquet(
@@ -342,20 +342,6 @@ def process_building_chars(
     buildings["ltcBuA"] = mm.building_adjacency(buildings_q1, bgraph)
     buildings["mtbAli"] = mm.alignment(buildings["stbOri"], bgraph)
     buildings["mtbNDi"] = mm.neighbor_distance(buildings, bgraph)
-
-    def partial_mean_intb_dist(partial_focals, partial_higher, buildings, bgraph):
-        pos_unique_higher = partial_higher.unique_ids
-        pos_unique_higher = pos_unique_higher[pos_unique_higher >= 0]
-        partial_buildings = buildings.loc[pos_unique_higher]
-        partial_bgraph = bgraph.subgraph(partial_buildings.index.values)
-        partial_bgraph3 = partial_higher.subgraph(partial_buildings.index.values)
-
-        res = pd.Series(np.nan, index=partial_higher.unique_ids)
-        mibd = mm.mean_interbuilding_distance(
-            buildings.loc[pos_unique_higher], partial_bgraph, partial_bgraph3
-        )
-        res.loc[mibd.index] = mibd.values
-        return res
 
     res = partial_apply(
         graph=queen_1,

@@ -4,16 +4,9 @@ import pandas as pd
 import geopandas as gpd
 from libpysal.graph import Graph
 
-__all__ = [
-    "lazy_higher_order",
-    "partial_apply",
-    "partial_describe_reached_agg",
-    "pprint_cluster_percentiles",
-]
-
 
 def lazy_higher_order(graph, k, n_splits, iteration_order=None):
-    """Generate higher order graphs."""
+    """Generate a higher order pysal.Graph in chunks"""
     A = graph.transform("B").sparse
     ids = graph.unique_ids.values
     id_to_numeric = pd.Series(np.arange(len(ids)), index=ids)
@@ -104,6 +97,22 @@ def partial_describe_reached_agg(
         del partial_result
     return res
 
+def partial_mean_intb_dist(partial_focals, partial_higher, buildings, bgraph):
+    """spread momepy.mean_interbuilding_distance across partial higher order graphs.
+    This function has to be passed to partial_apply be used with partial_apply."""
+    pos_unique_higher = partial_higher.unique_ids
+    pos_unique_higher = pos_unique_higher[pos_unique_higher >= 0]
+    partial_buildings = buildings.loc[pos_unique_higher]
+    partial_bgraph = bgraph.subgraph(partial_buildings.index.values)
+    partial_bgraph3 = partial_higher.subgraph(partial_buildings.index.values)
+
+    res = pd.Series(np.nan, index=partial_higher.unique_ids)
+    mibd = mm.mean_interbuilding_distance(
+        buildings.loc[pos_unique_higher], partial_bgraph, partial_bgraph3
+    )
+    res.loc[mibd.index] = mibd.values
+    return res
+        
 
 char_names = {
     "sdbAre": "area of building",

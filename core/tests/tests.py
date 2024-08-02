@@ -1,16 +1,20 @@
 import geopandas as gpd
 import pandas as pd
 from libpysal.graph import Graph
-from core.utils import lazy_higher_order, partial_apply
+from core.utils import lazy_higher_order, partial_apply, partial_describe_reached_agg, partial_mean_intb_dist 
+from core.generate_context import parallel_higher_order_context
 import momepy as mm
 import numpy as np
 from pandas.testing import assert_series_equal
 
 
-class TestUtils:
+class TestCore:
+    
     def setup_method(self):
         test_file_path = mm.datasets.get_path("bubenec")
         self.df_tessellation = gpd.read_file(test_file_path, layer="tessellation")
+        self.edges = gpd.read_file(test_file_path, layer="streets")
+        self.buildings = gpd.read_file(test_file_path, layer="buildings")
         self.df_tessellation["area"] = self.df_tessellation.geometry.area
         
         self.cont_graph1 = Graph.build_contiguity(self.df_tessellation).assign_self_weight()
@@ -95,3 +99,63 @@ class TestUtils:
             graph=graph1, higher_order_k=3, n_splits=2, func=sum_area, y=neg_tess["area"]
         )
         assert_series_equal(new_expected, res, check_names=False)
+
+
+    def test_describe_reached_agg(self):
+        
+        tess_nid = mm.get_nearest_street(
+            self.df_tessellation, self.edges
+        )
+        edges_graph = Graph.build_contiguity(self.edges, rook=False).assign_self_weight()
+        res = partial_describe_reached_agg(
+            self.df_tessellation.geometry.area,
+            tess_nid,
+            edges_graph,
+            higher_order=3,
+            n_splits=30,
+            q=None,
+            statistics=["sum", "count"],
+        )
+        higher = edges_graph.higher_order(k=3, lower_order=True, diagonal=True)
+        expected_res = mm.describe_reached_agg(
+            self.df_tessellation.geometry.area,
+            tess_nid,
+            higher,
+            q=None,
+            statistics=["sum", "count"]
+        )
+        assert_series_equal(res['sum'], expected_res['sum'], check_names=False)
+        assert_series_equal(res['count'], expected_res['count'], check_names=False)
+
+    def test_intb(self):
+
+        bgraph = Graph.build_contiguity(self.buildings, rook=False).assign_self_weight()
+        res = partial_apply(
+            graph=self.fuzzy_graph1,
+            higher_order_k=3,
+            n_splits=20,
+            func=partial_mean_intb_dist,
+            buildings=self.buildings,
+            bgraph=bgraph,
+        )
+        higher = self.fuzzy_graph1.higher_order(k=3, lower_order=True, diagonal=True)
+        expected_res = mm.mean_interbuilding_distance(self.buildings, bgraph, higher)
+        assert_series_equal(res, expected_res, check_names=False)
+
+
+    def test_context(self):
+
+        
+        spatial_lag = 3
+        context = parallel_higher_order_context(
+            self.df_tessellation[['area']], self.fuzzy_graph1, k=spatial_lag, n_splits=10, output_vals=3
+        )
+        context.columns = np.concatenate(
+            [(c + "_lower", c + "_median", c + "_higher") for c in self.df_tessellation[['area']].columns]
+        )
+        higher = self.fuzzy_graph1.higher_order(k=spatial_lag, lower_order=True, diagonal=True)
+        r = higher.describe(self.df_tessellation['area'], statistics=['median'])['median']
+        assert_series_equal(context['area_median'], r, check_names=False)
+
+
+        
