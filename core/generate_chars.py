@@ -176,8 +176,9 @@ def process_street_chars(
     tess_nid = mm.get_nearest_street(
         tessellation, edges
     )
+    
     edges["sdsAre"] = mm.describe_agg(
-        tessellation.geometry.area, tess_nid, edges.index, statistics=["count", "sum"]
+        tessellation.geometry.area, tess_nid, statistics=["count", "sum"]
     )["sum"]
 
     res = partial_describe_reached_agg(
@@ -192,11 +193,15 @@ def process_street_chars(
     edges["ldsRea"] = res["count"]
     edges["ldsAre"] = res["sum"]
 
-    blg_nid = tess_nid[tess_nid.index >= 0]
-    edges["sisBpM"] = blg_nid.value_counts() / edges.length
+   
 
     ## street building interactions
     buildings = gpd.read_parquet(buildings_dir + f"buildings_{region_id}.parquet")
+
+    blg_nid = mm.get_nearest_street(
+        buildings, streets
+    )
+    edges["sisBpM"] = blg_nid.value_counts() / edges.length
 
     profile = mm.street_profile(edges, buildings, height=None, distance=3)
     edges["sdsSPW"] = profile["width"]
@@ -372,7 +377,9 @@ def process_building_chars(
     tess_nid = mm.get_nearest_street(
         tessellation, edges
     )
-    blg_nid = tess_nid[tess_nid.index >= 0]
+    blg_nid = mm.get_nearest_street(
+        buildings, streets
+    )
     street_orientation = mm.orientation(streets)
     buildings["nID"] = blg_nid
     edges["nID"] = edges.index.values
@@ -424,13 +431,28 @@ def process_tessellation_chars(
             y.loc[partial_higher.unique_ids], statistics=["nunique"]
         )["nunique"]
 
-    tessellation["ltcWRB"] = partial_apply(
+    block_counts = partial_apply(
         queen_1,
         higher_order_k=3,
         n_splits=30,
         func=partial_block_count,
         y=tessellation["enclosure_index"],
     )
+
+    def partial_tess_area(partial_focal, partial_higher, y):
+        return partial_higher.describe(
+            y.loc[partial_higher.unique_ids], statistics=["sum"]
+        )["sum"]
+
+    block_sums = partial_apply(
+        queen_1,
+        higher_order_k=3,
+        n_splits=30,
+        func=partial_tess_area,
+        y=tessellation.geometry.area,
+    )
+
+    tessellation['ltcWRB'] = block_counts / block_sums
 
     # tesselation buildings interactions
     buildings = gpd.read_parquet(buildings_dir + f"buildings_{region_id}.parquet")
