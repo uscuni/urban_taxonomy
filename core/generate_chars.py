@@ -272,11 +272,17 @@ def process_enclosure_chars(
     blo_q1 = read_parquet(graph_dir + f"enclosure_graph_{region_id}_knn1.parquet")
     enclosures["ltkWNB"] = mm.neighbors(enclosures, blo_q1, weighted=True)
 
-    ## buildings enclosures interactions
-    buildings = gpd.read_parquet(buildings_dir + f"buildings_{region_id}.parquet")
+
+    #enclosures tessellation interactions
     tessellation = gpd.read_parquet(
         tessellations_dir + f"tessellation_{region_id}.parquet"
     )
+    encl_counts = tessellation.groupby('enclosure_index').count()
+    enclosures['likWCe'] = encl_counts['geometry'] / enclosures.geometry.area
+
+    ## buildings enclosures interactions
+    buildings = gpd.read_parquet(buildings_dir + f"buildings_{region_id}.parquet")
+
 
     beid = buildings.merge(
         tessellation["enclosure_index"], left_index=True, right_index=True
@@ -289,6 +295,9 @@ def process_enclosure_chars(
     )
 
     enclosures["likWBB"] = res["sum"] / enclosures.geometry.area
+
+
+    
 
     enclosures.to_parquet(chars_dir + f"enclosures_chars_{region_id}.parquet")
 

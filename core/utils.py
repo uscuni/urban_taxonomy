@@ -264,6 +264,7 @@ used_keys = {
     "ltkWNB": "perimeter-weighted neighbours of enclosure",
     "likWBB": "total of building areas within the enclosure, normalised by enclosure area",
     "sdsAre": "area covered by edge-attached ETCs",
+    "likWCe": "area-weighted ETCs of enclosure"
 }
 
 char_units = {

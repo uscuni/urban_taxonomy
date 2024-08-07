@@ -5,6 +5,28 @@ from sklearn.ensemble import RandomForestClassifier
 from lonboard.colormap import apply_categorical_cmap
 from palettable.colorbrewer.qualitative import Set3_12
 
+
+
+def generate_detailed_clusters(tessellation, include_random_sample=False, random_sample_size=1000):
+    """Use predefined clusters to label tessellation cells"""
+    clusters = gpd.read_parquet('../data/prague_clusters.parquet')
+    inp, res = tessellation.sindex.query(clusters.geometry, predicate='intersects')
+    index = tessellation.iloc[res].index
+    to_keep = ((~index.duplicated()) & (index >= 0))
+    index = index[to_keep]
+    values = clusters.iloc[inp, 0].values[to_keep]
+    tess_groups = pd.Series(values, index)
+    
+    if include_random_sample:
+        random_sample_index = tessellation.sample(
+            random_sample_size, random_state=1
+        ).index
+        random_sample = pd.Series("random", index=random_sample_index)
+        tess_groups = pd.concat((tess_groups, random_sample))
+    
+    return tess_groups[~tess_groups.index.duplicated()]
+    
+
 def generate_neigbhourhood_groups(
     tessellation, buffer=400, include_random_sample=False, random_sample_size=1000): 
     """Create a buffer around a specific point, then return all tessellation cell ids inside the buffer.
