@@ -108,7 +108,7 @@ def process_nodes_graph(region_id, graph_dir, streets_dir):
     ## nodes graphs
     streets = gpd.read_parquet(streets_dir + f"streets_{region_id}.parquet")
 
-    nx_graph = mm.gdf_to_nx(streets)
+    nx_graph = mm.gdf_to_nx(streets, preserve_index=True)
     nx_graph = mm.node_degree(nx_graph)
     _, _, w = mm.nx_to_gdf(nx_graph, spatial_weights=True)
 

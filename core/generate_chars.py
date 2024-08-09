@@ -173,9 +173,16 @@ def process_street_chars(
     tessellation = gpd.read_parquet(
         tessellations_dir + f"tessellation_{region_id}.parquet"
     )
-    tess_nid = mm.get_nearest_street(
-        tessellation, edges
-    )
+
+    
+    # tess_nid = mm.get_nearest_street(
+    #     tessellation, edges
+    # )
+
+    links = mm.get_network_ratio(tessellation, edges)
+    tessellation[['edgeID_keys', 'edgeID_values']] = links
+    keys = tessellation.edgeID_values.apply(lambda a: np.argmax(a))
+    tess_nid = np.array([inds[i] for inds, i in zip(tessellation.edgeID_keys, keys)])
     
     edges["sdsAre"] = mm.describe_agg(
         tessellation.geometry.area, tess_nid, statistics=["count", "sum"]
@@ -183,7 +190,7 @@ def process_street_chars(
 
     res = partial_describe_reached_agg(
         tessellation.geometry.area,
-        tess_nid,
+        pd.Series(tess_nid, index=tessellation.index),
         str_q1,
         higher_order=3,
         n_splits=30,
@@ -383,9 +390,11 @@ def process_building_chars(
     streets = gpd.read_parquet(streets_dir + f"streets_{region_id}.parquet")
     graph = mm.gdf_to_nx(streets, preserve_index=True)
     nodes, edges = mm.nx_to_gdf(graph, spatial_weights=False)
-    tess_nid = mm.get_nearest_street(
-        tessellation, edges
-    )
+    
+    # tess_nid = mm.get_nearest_street(
+    #     tessellation, edges
+    # )
+    
     blg_nid = mm.get_nearest_street(
         buildings, streets
     )
@@ -472,14 +481,19 @@ def process_tessellation_chars(
     graph = mm.gdf_to_nx(streets, preserve_index=True)
     nodes, edges = mm.nx_to_gdf(graph, spatial_weights=False)
     street_orientation = mm.orientation(edges)
-    tess_nid = mm.get_nearest_street(
-        tessellation, edges
-    )
+    
+    # tess_nid = mm.get_nearest_street(
+    #     tessellation, edges
+    # )
+    links = mm.get_network_ratio(tessellation, edges)
+    tessellation[['edgeID_keys', 'edgeID_values']] = links
+    keys = tessellation.edgeID_values.apply(lambda a: np.argmax(a))
+    tess_nid = np.array([inds[i] for inds, i in zip(tessellation.edgeID_keys, keys)])
 
     tessellation["stcSAl"] = mm.street_alignment(
-        tessellation["stcOri"][~tess_nid.isna()],
+        tessellation["stcOri"],
         street_orientation,
-        tess_nid[~tess_nid.isna()].astype(int).values,
+        tess_nid.astype(int),
     )
     
     edges["nID"] = edges.index.values
