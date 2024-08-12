@@ -125,7 +125,7 @@ def get_color(labels_to_color, noise_color=[0, 0, 0]):
     def hex_to_rgb(hexa):
         return tuple(int(hexa[i : i + 2], 16) for i in (0, 2, 4))
     
-    if labels_to_color.max() > 12:
+    if labels_to_color.max() >= 11:
         gb_cols = glasbey.extend_palette(
             Set3_12.hex_colors, palette_size=np.unique(labels_to_color).shape[0] + 1
         )
