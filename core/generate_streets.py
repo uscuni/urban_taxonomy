@@ -59,9 +59,13 @@ def process_region_streets(region_hull, region_id):
                      'unclassified']
     streets = streets[streets['class'].isin(approved_roads)]
     ## drop tunnels
-    streets = streets[~streets.road.str.contains('is_tunnel').fillna(False)]
+    tunnels = streets[streets.road.str.contains('tunnel').fillna(False)].set_crs(epsg=4236).to_crs(epsg=3035)
+    tunnels_to_drop = tunnels.apply(to_drop_tunnel, axis=1)
+    streets = streets.drop(tunnels[tunnels_to_drop].index)
+    
     streets = streets.set_crs(epsg=4326).to_crs(epsg=3035)
     streets = streets.sort_values('id')[['id', 'geometry', 'class']].reset_index(drop=True)
+    
     return streets
 
 def read_overture_region_streets(region_hull, region_id):
@@ -81,6 +85,20 @@ def read_region_streets(region_hull, region_id):
 
     return streets
 
+def to_drop_tunnel(tunnel):
+    tunnel_length = tunnel.geometry.length
+    tunnel = json.loads(tunnel.road)
+    if 'flags' in tunnel:
+        total_tunnel_proportion = 0.0
+        for flag in tunnel['flags']:
+            if 'between' in flag:
+                s,e = flag['between'][0], flag['between'][1]
+                total_tunnel_proportion += (e - s)
+        if (total_tunnel_proportion*tunnel_length) > 50:
+            return True
+        elif total_tunnel_proportion == 0.0:
+            return True
+    return False
 
 
 ## from overturemaps-py
