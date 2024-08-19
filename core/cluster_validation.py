@@ -7,9 +7,10 @@ from palettable.colorbrewer.qualitative import Set3_12
 
 
 
-def generate_detailed_clusters(tessellation, include_random_sample=False, random_sample_size=1000):
+def generate_detailed_clusters(tessellation, include_random_sample=False, random_sample_size=1000,
+                               path='../data/prague_clusters.parquet'):
     """Use predefined clusters to label tessellation cells"""
-    clusters = gpd.read_parquet('../data/prague_clusters.parquet')
+    clusters = gpd.read_parquet(path)
     inp, res = tessellation.sindex.query(clusters.geometry, predicate='intersects')
     index = tessellation.iloc[res].index
     to_keep = ((~index.duplicated()) & (index >= 0))
