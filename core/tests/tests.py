@@ -2,11 +2,11 @@ import geopandas as gpd
 import pandas as pd
 from libpysal.graph import Graph
 from core.utils import lazy_higher_order, partial_apply, partial_describe_reached_agg, partial_mean_intb_dist 
-from core.generate_context import parallel_higher_order_context
+from core.generate_context import parallel_higher_order_context, spatially_weighted_partial_lag
 import momepy as mm
 import numpy as np
 from pandas.testing import assert_series_equal
-
+import shapely
 
 class TestCore:
     
@@ -145,7 +145,6 @@ class TestCore:
 
     def test_context(self):
 
-        
         spatial_lag = 3
         context = parallel_higher_order_context(
             self.df_tessellation[['area']], self.fuzzy_graph1, k=spatial_lag, n_splits=10, output_vals=3
@@ -157,5 +156,30 @@ class TestCore:
         r = higher.describe(self.df_tessellation['area'], statistics=['median'])['median']
         assert_series_equal(context['area_median'], r, check_names=False)
 
+    def test_spatially_weighted_context(self):
+        
+        spatial_lag = 3
+        centroids = shapely.get_coordinates(self.df_tessellation.representative_point())
+        n_splits=10
+        context = spatially_weighted_partial_lag(self.df_tessellation[['area']],
+                                                 self.fuzzy_graph1, centroids, 'inverse', 
+                                                 k=spatial_lag, n_splits=n_splits)
 
+        higher = self.fuzzy_graph1.higher_order(k=spatial_lag, lower_order=True)
+        from shapely import distance
+        centroids = self.df_tessellation.representative_point()
+        def _distance_decay_weights(group):
+            focal = group.index[0][0]
+            neighbours = group.index.get_level_values(1)
+            distances = distance(centroids.loc[focal], centroids.loc[neighbours])
+            distance_decay = 1 / distances
+            return distance_decay.values
+        
+        decay_graph = higher.transform(_distance_decay_weights)
+        expected_context = mm.percentile(self.df_tessellation['area'], decay_graph, q=[50])
+
+        isolates = self.fuzzy_graph1.assign_self_weight(0).isolates
+        assert_series_equal(expected_context.drop(isolates)[50], 
+                            context.drop(isolates).iloc[:, 0], 
+                            check_names=False)
         

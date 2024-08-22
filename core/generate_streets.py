@@ -59,9 +59,9 @@ def process_region_streets(region_hull, region_id):
                      'unclassified']
     streets = streets[streets['class'].isin(approved_roads)]
     ## drop tunnels
-    tunnels = streets[streets.road.str.contains('tunnel').fillna(False)].set_crs(epsg=4236).to_crs(epsg=3035)
-    tunnels_to_drop = tunnels.apply(to_drop_tunnel, axis=1)
-    streets = streets.drop(tunnels[tunnels_to_drop].index)
+    # tunnels = streets[streets.road.str.contains('tunnel').fillna(False)].set_crs(epsg=4236).to_crs(epsg=3035)
+    # tunnels_to_drop = tunnels.apply(to_drop_tunnel, axis=1)
+    # streets = streets.drop(tunnels[tunnels_to_drop].index)
     
     streets = streets.set_crs(epsg=4326).to_crs(epsg=3035)
     streets = streets.sort_values('id')[['id', 'geometry', 'class']].reset_index(drop=True)
@@ -194,7 +194,7 @@ def _dataset_path(overture_type: str) -> str:
     # complete s3 path. Could be discovered by reading from the top-level s3
     # location but this allows to only read the files in the necessary partition.
     theme = type_theme_map[overture_type]
-    return f"overturemaps-us-west-2/release/2024-06-13-beta.1/theme={theme}/type={overture_type}/"
+    return f"overturemaps-us-west-2/release/2024-08-20.0/theme={theme}/type={overture_type}/"
     
 
 if __name__ == "__main__":
