@@ -13,6 +13,7 @@ from typing import Optional
 import pyarrow.parquet as pq
 import shapely.wkb
 import geopandas as gpd
+import sgeop
 
 regions_datadir = "/data/uscuni-ulce/"
 data_dir = "/data/uscuni-ulce/processed_data/"
@@ -40,7 +41,28 @@ def process_all_regions_streets():
         gc.collect()
 
 
-def process_region_streets(region_hull, region_id):
+def to_drop_tunnel(row):
+    tunnel_length = row.geometry.length
+    flags = row.road_flags
+
+    total_tunnel_proportion = -1
+    for flag in flags:
+        if 'values' in flag and ('is_tunnel' in flag['values']) :
+            # between could be missing to show the whole thing is a tunnel
+            total_tunnel_proportion = 0.0 if total_tunnel_proportion < 0 else total_tunnel_proportion
+            # betweencould be None to indicate the whole thing is a tunnel 
+            if ('between' in flag) and (flag['between'] is not None):
+                s,e = flag['between'][0], flag['between'][1]
+                total_tunnel_proportion += (e - s)
+    
+    if (total_tunnel_proportion*tunnel_length) > 50:
+        return True
+    elif total_tunnel_proportion == 0.0:
+        return True
+    return False
+    
+
+def process_region_streets(region_hull, region_id, buildings_dir):
     streets = read_overture_region_streets(region_hull, region_id)
     ## service road removed
     approved_roads = ['living_street',
@@ -58,15 +80,26 @@ def process_region_streets(region_hull, region_id):
                      'trunk_link',
                      'unclassified']
     streets = streets[streets['class'].isin(approved_roads)]
+
+    
     ## drop tunnels
-    # tunnels = streets[streets.road.str.contains('tunnel').fillna(False)].set_crs(epsg=4236).to_crs(epsg=3035)
-    # tunnels_to_drop = tunnels.apply(to_drop_tunnel, axis=1)
-    # streets = streets.drop(tunnels[tunnels_to_drop].index)
+    to_filter = streets.loc[~streets.road_flags.isna(), ].set_crs(epsg=4236).to_crs(epsg=3035)
+    tunnels_to_drop = to_filter.apply(to_drop_tunnel, axis=1)
+    streets = streets.drop(to_filter[tunnels_to_drop].index)
     
     streets = streets.set_crs(epsg=4326).to_crs(epsg=3035)
     streets = streets.sort_values('id')[['id', 'geometry', 'class']].reset_index(drop=True)
+
+
+    ## simplify
+    buildings = gpd.read_parquet(buildings_dir + f'buildings_{region_id}.parquet', columns=["geometry"])
+    simplified = sgeop.simplify_network(
+    streets,
+    exclusion_mask=buildings.geometry,
+    artifact_threshold_fallback=7,
+    )
     
-    return streets
+    return simplified
 
 def read_overture_region_streets(region_hull, region_id):
 
@@ -84,21 +117,6 @@ def read_region_streets(region_hull, region_id):
     streets = streets[streets.intersects(read_mask)].reset_index(drop=True)
 
     return streets
-
-def to_drop_tunnel(tunnel):
-    tunnel_length = tunnel.geometry.length
-    tunnel = json.loads(tunnel.road)
-    if 'flags' in tunnel:
-        total_tunnel_proportion = 0.0
-        for flag in tunnel['flags']:
-            if 'between' in flag:
-                s,e = flag['between'][0], flag['between'][1]
-                total_tunnel_proportion += (e - s)
-        if (total_tunnel_proportion*tunnel_length) > 50:
-            return True
-        elif total_tunnel_proportion == 0.0:
-            return True
-    return False
 
 
 ## from overturemaps-py
