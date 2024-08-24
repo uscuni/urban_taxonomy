@@ -126,7 +126,7 @@ def partial_weighted_percentile(rows, cols, partial_vals, centroids, kernel):
         
         not_zero = weights != 0
 
-        if kernel == 'gausian':
+        if kernel == 'gaussian':
             u = weights / np.max(weights)
             weights = np.exp(-((u / 2) ** 2)) / (np.sqrt(2) * np.pi)
         elif kernel == 'inverse':
