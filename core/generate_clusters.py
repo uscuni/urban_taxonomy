@@ -30,7 +30,7 @@ from fast_hdbscan.numba_kdtree import kdtree_to_numba
 from sklearn.neighbors import KDTree
 
 
-def preprocess_clustering_data(X_train, to_drop):
+def preprocess_clustering_data(X_train, clip, to_drop):
     
     ## drop non-buildings
     X_train = X_train[X_train.index >= 0]
@@ -50,6 +50,10 @@ def preprocess_clustering_data(X_train, to_drop):
     # drop any columns with no variation
     stats = X_train.describe()
     X_train = X_train.drop(stats.columns[stats.loc['std'] == 0], axis=1)
+
+    #optionally clip the data
+    if clip is not None:
+        X_train = X_train.clip(*clip)
 
     return X_train
 
@@ -107,7 +111,7 @@ def get_clusters(linkage_matrix, min_cluster_size, eom_clusters=True):
 
 
 
-def cluster_data(X_train, graph, to_drop, min_cluster_size, linkage, metric):
+def cluster_data(X_train, graph, to_drop, clip, min_cluster_size, linkage, metric):
 
     # label building input data, could work with empty tess as well
     building_graph = graph.subgraph(graph.unique_ids[graph.unique_ids >= 0])
@@ -121,7 +125,7 @@ def cluster_data(X_train, graph, to_drop, min_cluster_size, linkage, metric):
             component_clusters = np.ones(group.shape[0])
     
         else:
-            component_buildings_data = preprocess_clustering_data(X_train.loc[group.index.values], to_drop=to_drop)
+            component_buildings_data = preprocess_clustering_data(X_train.loc[group.index.values], clip=clip, to_drop=to_drop)
             component_graph = building_graph.subgraph(group.index.values)
             ward_tree = get_tree(component_buildings_data, component_graph.transform('B').sparse, linkage, metric)
     

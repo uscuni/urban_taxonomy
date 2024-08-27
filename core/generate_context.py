@@ -81,7 +81,7 @@ def parallel_higher_order_context(df, graph, k, n_splits, output_vals):
 
 @numba.njit
 def _interpolate(weights, group):
-    q = (50,)
+    q = (25, 50, 75)
     nan_tracker = np.isnan(group)
     if nan_tracker.all():
         return np.array([float(np.nan) for _ in q])
@@ -103,7 +103,7 @@ def _interpolate(weights, group):
 @numba.njit(parallel=True)
 def partial_weighted_percentile(rows, cols, partial_vals, centroids, kernel):
     """rows are the re-mapped focals, cols are re-mapped neighbours"""
-    output_vals = 1
+    output_vals = 2
     ngroups = len(np.unique(rows))
     nrows = rows.shape[0]
     result = np.empty((ngroups, partial_vals.shape[1] * output_vals))
@@ -144,11 +144,13 @@ def partial_weighted_percentile(rows, cols, partial_vals, centroids, kernel):
 
             if np.isnan(col_vals).all():
                 result[g, res_index] = np.nan
+                result[g, res_index+1] = np.nan
                 continue
 
             else:
                 res = _interpolate(weights[not_zero], col_vals[not_zero])
-                result[g, res_index] = res[0]
+                result[g, res_index] = res[1]
+                result[g, res_index+1] = res[2] - res[0]
 
         # # go to next group
         istart = iend
@@ -164,7 +166,7 @@ def spatially_weighted_partial_lag(df, graph, centroids, kernel, k, n_splits):
     values = df.values
     
     final_result = pd.DataFrame(
-        np.empty((values.shape[0], values.shape[1])), index=ids
+        np.empty((values.shape[0], values.shape[1] * 2)), index=ids
     )
     
     for source in np.array_split(rows, n_splits):
@@ -189,5 +191,5 @@ def spatially_weighted_partial_lag(df, graph, centroids, kernel, k, n_splits):
     
         final_result.iloc[source, :] = partial_res
 
-    final_result.columns = [c + "_median" for c in df.columns]
+    final_result.columns = np.concatenate([(c + "_median", c + "_iqr") for c in df.columns])
     return final_result
