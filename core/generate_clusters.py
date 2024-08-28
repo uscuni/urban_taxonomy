@@ -140,10 +140,7 @@ def cluster_data(X_train, graph, to_drop, clip, min_cluster_size, linkage, metri
             # assert (ward_tree[1:, 2] >= ward_tree[0:-1, 2]).all()
             
             component_clusters = get_clusters(ward_tree, min_cluster_size, eom_clusters=True)
-    
-            
-            # component_clusters = fcluster(ward_tree, t=80, criterion='distance')
-            
+                
             component_clusters = post_process_clusters(component_buildings_data, component_graph, component_clusters)
             
             for c in np.unique(component_clusters):
