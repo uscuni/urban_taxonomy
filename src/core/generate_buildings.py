@@ -43,6 +43,7 @@ def process_all_regions_buildings():
 
 
 def process_region_buildings(buildings, simplify, simplification_tolerance=.1, merge_limit=25):
+    '''Pass the region buildings through the geoplanar simplification pipeline.'''
     
     initial_shape = buildings.shape
 

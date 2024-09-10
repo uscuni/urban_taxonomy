@@ -42,6 +42,7 @@ def process_all_regions_streets():
 
 
 def to_drop_tunnel(row):
+    '''Find whether or not a road segment has a tunnel thats more than 50 metres.'''
     tunnel_length = row.geometry.length
     flags = row.road_flags
 
@@ -63,6 +64,7 @@ def to_drop_tunnel(row):
     
 
 def process_region_streets(region_hull, region_id, buildings_dir):
+    '''Download overture streets, filter them, drop tunnels and simplify.'''
     streets = read_overture_region_streets(region_hull, region_id)
     ## service road removed
     approved_roads = ['living_street',
@@ -102,7 +104,7 @@ def process_region_streets(region_hull, region_id, buildings_dir):
     return simplified
 
 def read_overture_region_streets(region_hull, region_id):
-
+    '''Download overture streets within the region_hull.'''
     batches = record_batch_reader('segment', region_hull.bounds).read_all()
     gdf = gpd.GeoDataFrame.from_arrow(batches)
     gdf = gdf.iloc[gdf.sindex.query(region_hull, predicate='intersects')]

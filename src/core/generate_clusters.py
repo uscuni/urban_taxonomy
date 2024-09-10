@@ -31,7 +31,7 @@ from sklearn.neighbors import KDTree
 
 
 def preprocess_clustering_data(X_train, clip, to_drop):
-    
+    '''Data pre-processing before clustering is carried out.'''
     ## drop non-buildings
     X_train = X_train[X_train.index >= 0]
 
@@ -59,7 +59,7 @@ def preprocess_clustering_data(X_train, clip, to_drop):
 
 
 def get_tree(training_data, clustering_graph, linkage, metric):
-
+    '''Carry out AgglomerativeClustering and return the linkage matrix.'''
     clusterer = AgglomerativeClustering(linkage=linkage,
                                         connectivity = clustering_graph,
                                         metric=metric,
@@ -71,7 +71,7 @@ def get_tree(training_data, clustering_graph, linkage, metric):
 
 
 def post_process_clusters(component_buildings_data, component_graph, component_clusters):
-
+    '''Process noise points and singletons within a set of clusters.'''
 
     component_clusters = component_clusters.copy()
         
@@ -94,7 +94,7 @@ def post_process_clusters(component_buildings_data, component_graph, component_c
 
 
 def get_clusters(linkage_matrix, min_cluster_size, eom_clusters=True):
-
+    '''Extract hdbscan cluster types from a linkage matrix.'''
     condensed_tree = condense_tree(linkage_matrix, 
                                min_cluster_size=min_cluster_size)
     cluster_tree = cluster_tree_from_condensed_tree(condensed_tree)
@@ -112,7 +112,9 @@ def get_clusters(linkage_matrix, min_cluster_size, eom_clusters=True):
 
 
 def cluster_data(X_train, graph, to_drop, clip, min_cluster_size, linkage, metric):
-
+    '''Split the input data into connected components and carry out an agglomerative clustering for each component independently.
+    Pre-process the input data, cluster and then carry out post-processing and finally combine all the seperate clusterings into one set of clusters.'''
+    
     # label building input data, could work with empty tess as well
     building_graph = graph.subgraph(graph.unique_ids[graph.unique_ids >= 0])
     labels = building_graph.component_labels

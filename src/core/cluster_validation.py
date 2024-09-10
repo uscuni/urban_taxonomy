@@ -64,6 +64,7 @@ def generate_neigbhourhood_groups(
 
 
 def get_tess_groups_original_ilocs(tessellation, tess_groups):
+    '''Find the location of the tess_groups members in the tessellation index.'''
     return (
         pd.Series(np.arange(0, len(tessellation)), index=tessellation.index)
         .loc[tess_groups.index]
@@ -72,7 +73,7 @@ def get_tess_groups_original_ilocs(tessellation, tess_groups):
 
 
 def pprint_cluster_percentiles(X_train, labels):
-    """'print cluster statistics and highlight the distribution of each feature."""
+    """'Print cluster statistics and highlight the distribution of each feature."""
     cluster_stats = X_train.groupby(labels).describe()
     cluster_stats = cluster_stats.loc[:, (slice(None), ["25%", "50%", "75%"])].T
     counts = X_train.groupby(labels).size()
@@ -88,21 +89,25 @@ def pprint_cluster_percentiles(X_train, labels):
     cluster_stats = cluster_stats.rename(extended_col_names, axis=0)
     f = {
         k: "{:.4f}" for k in cluster_stats.columns.values
-    }  # column col A to 2 decimals
+    }
     return cluster_stats.style.format(f).background_gradient(axis=1, cmap="BuGn")
 
 
 def colored_crosstab(vals1, vals2):
+    """"Print a cross tabulation between the two sets of values, using continous highlighting"""
     ct = pd.crosstab(vals1, vals2)
     return ct.style.background_gradient(axis=1, cmap="BuGn")
 
 def print_distance(groups, metric='euclidean'):
+    """print the distance between the points in the groups dataframe."""
     from scipy.spatial.distance import pdist, squareform
     vals = squareform(pdist(groups, metric=metric))
     df = pd.DataFrame(vals, index=groups.index, columns=groups.index)
     return df.style.background_gradient(axis=1, cmap="BuGn")
 
 def get_feature_importance(input_data, clusters):
+    '''Train a random forest classifier per cluster and output the feature importance.
+    Used to identify dominating features.'''
     imps = pd.DataFrame()
     
     for cluster in np.unique(clusters):
@@ -120,7 +125,7 @@ def get_feature_importance(input_data, clusters):
 
 
 def get_color(labels_to_color, noise_color=[0, 0, 0]):
-
+    '''Generate n colors for n labels. Labels with -1 are black.'''
     import glasbey
     
     def hex_to_rgb(hexa):
@@ -142,7 +147,8 @@ def get_color(labels_to_color, noise_color=[0, 0, 0]):
     return colors
 
 def get_linkage_matrix(model):
-    # Create linkage matrix and then plot the dendrogram
+    """" Create a linkage matrix from a sklearn hierarchical clustering model.
+    Requires the full tree and the distances stored in the model instance."""
 
     # create the counts of samples under each node
     counts = np.zeros(model.children_.shape[0])
