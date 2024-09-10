@@ -1,86 +1,54 @@
-[build-system]
-requires = ["setuptools>=61.0", "setuptools_scm[toml]>=6.2"]
-build-backend = "setuptools.build_meta"
-
-[tool.setuptools_scm]
-
 [project]
+authors = [{name = "Krasen Samardzhiev", email = "krasensam@gmail.com"}]
+dependencies = []
+description = "Add a short description here"
 name = "core"
-dynamic = ["version"]
-#authors = [
-#    { name = "", email = "" },
-#    { name = "", email = "" },
-#    { name = "", email = "" },
-#]
+requires-python = ">= 3.12.4"
+version = "0.1.0"
 
-#maintainers = [{ name = "" }]
-license = { text = "BSD 3-Clause" }
-description = "State-of-the-Art simplification of street network geometry with Python"
-keywords = [""]
-readme = "README.md"
-classifiers = [
-    "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: BSD License",
-    "Operating System :: OS Independent",
-    "Intended Audience :: Science/Research",
-    "Topic :: Scientific/Engineering :: GIS",
-]
-requires-python = ">=3.11,<3.13"
-dependencies = [
-    "momepy",
-    "umap-learn",
-    "fast_hdbscan",
-    "jupyterlab",
-    "pyarrow",
-    "matplotlib",
-    "lonboard",
-    "folium",
-    "mapclassify",
-    "datashader",
-    "bokeh",
-    "holoviews",
-    "geoplanar"
-]
+[build-system]
+build-backend = "hatchling.build"
+requires = ["hatchling"]
+
+[tool.pixi.project]
+channels = ["conda-forge"]
+platforms = ["linux-64"]
+
+[tool.pixi.pypi-dependencies]
+core = { path = ".", editable = true }
+
+[tool.pixi.tasks]
+manual_deps_dir = "mkdir manual_deps"
+clone_shapely = { cmd = "git clone https://github.com/martinfleis/shapely.git manual_deps/shapely/ && cd manual_deps/shapely/ && git checkout vw && git tag 2.5.0 && python -m pip install --no-deps --disable-pip-version-check -e ."}
+clone_momepy = { cmd = "git clone git@github.com:u3ks/momepy.git manual_deps/momepy/ && cd manual_deps/momepy/ && git checkout tess_single_building && python -m pip install --no-deps --disable-pip-version-check -e ."}
+clone_geoplanar = { cmd = "git clone git@github.com:sjsrey/geoplanar.git manual_deps/geoplanar/ && cd manual_deps/geoplanar/ && python -m pip install --no-deps --disable-pip-version-check -e ."}
+clone_fasthdbscan = { cmd = "git clone git@github.com:TutteInstitute/fast_hdbscan.git manual_deps/fasthdbscan/ && cd manual_deps/fasthdbscan/ && python -m pip install --no-deps --disable-pip-version-check -e ."}
+clone_sgeop = { cmd = "git clone git@github.com:uscuni/sgeop.git manual_deps/sgeop/ && cd manual_deps/sgeop/ && python -m pip install --no-deps --disable-pip-version-check -e ."}
+
+build = { cmd = "echo 'built manual deps'", depends-on=["manual_deps_dir", "clone_shapely", "clone_momepy", "clone_geoplanar", "clone_fasthdbscan", "clone_sgeop"]}
+
+tests = "pytest src/core/tests/*"
 
 
-[project.urls]
-Home = "https://github.com/uscuni/"
-Repository = "https://github.com/uscuni/simplification"
-
-[project.optional-dependencies]
-tests = [
-    "codecov",
-    "coverage",
-    "pytest",
-    "pytest-cov",
-    "pytest-xdist",
-]
-
-
-[tool.setuptools.packages.find]
-include = ["core", "core.*"]
-
-[tool.ruff]
-line-length = 88
-extend-include = ["*.ipynb"]
-lint.select = ["E", "F", "W", "I", "UP", "N", "B", "A", "C4", "SIM", "ARG"]
-
-[tool.ruff.lint.per-file-ignores]
- "*__init__.py" = [
-     "F401",  # imported but unused
-     "F403",  # star import; unable to detect undefined names
- ]
-
-[tool.coverage.run]
-source = ["./core"]
-
-[tool.coverage.report]
-exclude_lines = [
-    "if self.debug:",
-    "pragma: no cover",
-    "raise NotImplementedError",
-    "except ModuleNotFoundError:",
-    "except ImportError",
-]
-ignore_errors = true
-omit = ["core/tests/*"]
+[tool.pixi.dependencies]
+jupyterlab = ">=4.2.5,<5"
+umap-learn = ">=0.5.6,<0.6"
+pyarrow = ">=17.0.0,<18"
+matplotlib = ">=3.9.2,<4"
+lonboard = ">=0.9.3,<0.10"
+folium = ">=0.17.0,<0.18"
+mapclassify = ">=2.8.0,<3"
+datashader = ">=0.16.3,<0.17"
+bokeh = "3.1.*"
+holoviews = ">=1.18.3,<2"
+dask = ">=2024.8.2,<2025"
+momepy = ">=0.8.0,<0.9"
+fast_hdbscan = ">=0.1.3,<0.2"
+pip = ">=24.2,<25"
+sidecar = ">=0.7.0,<0.8"
+glasbey = ">=0.2.1,<0.3"
+scikit-image = ">=0.24.0,<0.25"
+colorcet = ">=3.1.0,<4"
+pandas = ">=2.2.2,<3"
+esda = ">=2.6.0,<3"
+pytest = ">=8.3.2,<9"

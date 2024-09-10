@@ -141,4 +141,7 @@ dmypy.json
 doc/source/generated
 
 # data
+data/.pixi/
+manual_deps/
+.pixi/
 data/
