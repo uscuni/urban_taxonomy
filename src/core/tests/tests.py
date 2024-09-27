@@ -3,6 +3,7 @@ import pandas as pd
 from libpysal.graph import Graph
 from core.utils import lazy_higher_order, partial_apply, partial_describe_reached_agg, partial_mean_intb_dist 
 from core.generate_context import parallel_higher_order_context, spatially_weighted_partial_lag
+from core.generate_elements import generate_enclosures_representative_points
 import momepy as mm
 import numpy as np
 from pandas.testing import assert_series_equal
@@ -182,4 +183,9 @@ class TestCore:
         assert_series_equal(expected_context.drop(isolates)[50], 
                             context.drop(isolates).iloc[:, 0], 
                             check_names=False)
+
+    def test_tess_simplification_env_setup(self):
+        enclosures = generate_enclosures_representative_points(self.buildings, self.edges)
+        tessellation = mm.enclosed_tessellation(self.buildings, enclosures.geometry, simplify=True)
+        assert True # only testing if the above 2 functions work in the environment
         

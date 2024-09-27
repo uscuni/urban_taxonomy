@@ -1586,7 +1586,7 @@ packages:
   name: core
   version: 0.1.0
   path: .
-  sha256: 349ccac57f5f6db4e743ff49e3eadda8644a1a23b6db616727b88f883f30e136
+  sha256: 7f5364bef5423f5162a02c077c4c71744f5b03a68fc89c417b7bba9da8571189
   requires_python: '>=3.12.4'
   editable: true
 - kind: conda
