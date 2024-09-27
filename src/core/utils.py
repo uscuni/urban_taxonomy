@@ -1,18 +1,12 @@
 import momepy as mm
 import numpy as np
 import pandas as pd
+import geopandas as gpd
 from libpysal.graph import Graph
-
-__all__ = [
-    "lazy_higher_order",
-    "partial_apply",
-    "partial_describe_reached_agg",
-    "pprint_cluster_percentiles",
-]
 
 
 def lazy_higher_order(graph, k, n_splits, iteration_order=None):
-    """Generate higher order graphs."""
+    """Generate a higher order pysal.Graph in chunks"""
     A = graph.transform("B").sparse
     ids = graph.unique_ids.values
     id_to_numeric = pd.Series(np.arange(len(ids)), index=ids)
@@ -103,31 +97,22 @@ def partial_describe_reached_agg(
         del partial_result
     return res
 
+def partial_mean_intb_dist(partial_focals, partial_higher, buildings, bgraph):
+    """spread momepy.mean_interbuilding_distance across partial higher order graphs.
+    This function has to be passed to partial_apply be used with partial_apply."""
+    pos_unique_higher = partial_higher.unique_ids
+    pos_unique_higher = pos_unique_higher[pos_unique_higher >= 0]
+    partial_buildings = buildings.loc[pos_unique_higher]
+    partial_bgraph = bgraph.subgraph(partial_buildings.index.values)
+    partial_bgraph3 = partial_higher.subgraph(partial_buildings.index.values)
 
-def standardize_features(vals):
-    return (vals - vals.min(axis=0)) / (vals.max(axis=0) - vals.min(axis=0))
-
-
-def pprint_cluster_percentiles(X_train, labels):
-    """style the pandas output on a per row basis"""
-    cluster_stats = X_train.groupby(labels).describe()
-    cluster_stats = cluster_stats.loc[:, (slice(None), ["25%", "50%", "75%"])].T
-    counts = X_train.groupby(kmeans_label).size()
-    cluster_stats.loc[("count", "count"), :] = counts.values
-    extended_col_names = {}
-    for c in X_train.columns.values:
-        if "_" in c:
-            orig_key = c.split("_")[0]
-            attach = c.split("_")[1]
-            extended_col_names[c] = used_keys[orig_key] + " (" + attach + ")"
-        else:
-            extended_col_names[c] = used_keys[c]
-    cluster_stats = cluster_stats.rename(extended_col_names, axis=0)
-    f = {
-        k: "{:.4f}" for k in cluster_stats.columns.values
-    }  # column col A to 2 decimals
-    return cluster_stats.style.format(f).background_gradient(axis=1, cmap="BuGn")
-
+    res = pd.Series(np.nan, index=partial_higher.unique_ids)
+    mibd = mm.mean_interbuilding_distance(
+        buildings.loc[pos_unique_higher], partial_bgraph, partial_bgraph3
+    )
+    res.loc[mibd.index] = mibd.values
+    return res
+        
 
 char_names = {
     "sdbAre": "area of building",
@@ -278,6 +263,8 @@ used_keys = {
     "ltkOri": "orientation of enclosure",
     "ltkWNB": "perimeter-weighted neighbours of enclosure",
     "likWBB": "total of building areas within the enclosure, normalised by enclosure area",
+    "sdsAre": "area covered by edge-attached ETCs",
+    "likWCe": "area-weighted ETCs of enclosure"
 }
 
 char_units = {
@@ -342,4 +329,5 @@ char_units = {
     "ltkOri": "degrees",
     "ltkWNB": "ratio",
     "likWBB": "ratio",
+    "sdsAre": "area-neigbourhood"
 }
