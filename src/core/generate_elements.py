@@ -44,7 +44,7 @@ def process_region_elements(buildings_data_dir, streets_data_dir, region_id):
         buildings_data_dir + f"buildings_{region_id}.parquet"
     )
     streets = gpd.read_parquet(streets_data_dir + f"streets_{region_id}.parquet")
-    enclosures = generate_enclosures(buildings, streets)
+    enclosures = generate_enclosures_representative_points(buildings, streets)
     tesselations = generate_tess(buildings, enclosures, n_workers=-1)
 
     ### there are some edge cases for long and narrow buildings and
@@ -60,7 +60,7 @@ def process_region_elements(buildings_data_dir, streets_data_dir, region_id):
         ## assume all missing buildings are problematic polygons, drop them and retry the tessellation
         num_problem_buildings = (~tesselation_coverage).sum()
         buildings = buildings[tesselation_coverage].reset_index()
-        enclosures = generate_enclosures(buildings, streets)
+        enclosures = generate_enclosures_representative_points(buildings, streets)
         tesselations = generate_tess(buildings, enclosures, n_workers=-1)
         tesselation_coverage = np.isin(
             buildings.index.values, tesselations.index.values

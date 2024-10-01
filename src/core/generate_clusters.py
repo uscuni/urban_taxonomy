@@ -97,6 +97,7 @@ def get_clusters(linkage_matrix, min_cluster_size, eom_clusters=True):
     '''Extract hdbscan cluster types from a linkage matrix.'''
     condensed_tree = condense_tree(linkage_matrix, 
                                min_cluster_size=min_cluster_size)
+    
     cluster_tree = cluster_tree_from_condensed_tree(condensed_tree)
 
     if eom_clusters:
@@ -134,12 +135,12 @@ def cluster_data(X_train, graph, to_drop, clip, min_cluster_size, linkage, metri
             # # sometimes ward linkage breaks the monotonic increase in the MST
             # # if that happens shift all distances by the max drop
             # # need a loop because several connections might be problematic
-            # problem_idxs = np.where(ward_tree[1:, 2] < ward_tree[0:-1, 2])[0]
-            # while problem_idxs.shape[0]:
-            #     ward_tree[problem_idxs + 1, 2] = ward_tree[problem_idxs, 2] + .01
-            #     problem_idxs = np.where(ward_tree[1:, 2] < ward_tree[0:-1, 2])[0]
-            # # check if ward tree distances are always increasing
-            # assert (ward_tree[1:, 2] >= ward_tree[0:-1, 2]).all()
+            problem_idxs = np.where(ward_tree[1:, 2] < ward_tree[0:-1, 2])[0]
+            while problem_idxs.shape[0]:
+                ward_tree[problem_idxs + 1, 2] = ward_tree[problem_idxs, 2] + .01
+                problem_idxs = np.where(ward_tree[1:, 2] < ward_tree[0:-1, 2])[0]
+            # check if ward tree distances are always increasing
+            assert (ward_tree[1:, 2] >= ward_tree[0:-1, 2]).all()
             
             component_clusters = get_clusters(ward_tree, min_cluster_size, eom_clusters=True)
                 
@@ -152,7 +153,8 @@ def cluster_data(X_train, graph, to_drop, clip, min_cluster_size, linkage, metri
         
             # if label ==3: break
         results[label] = component_clusters
-    
+
+    ### relabel local clusters(0,1,2,0,1) to regional clusters(0_0,0_1,0_2, 0_0,0_1,) etc
     label_groups = labels.groupby(labels)
     region_cluster_labels = []
     for label, component_clusters in results.items():
