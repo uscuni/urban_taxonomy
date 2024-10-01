@@ -63,9 +63,13 @@ def to_drop_tunnel(row):
     return False
     
 
-def process_region_streets(region_hull, region_id, buildings_dir):
-    '''Download overture streets, filter them, drop tunnels and simplify.'''
-    streets = read_overture_region_streets(region_hull, region_id)
+
+
+def process_region_streets(region_id, streets_dir, buildings_dir):
+    '''Filter streets them, drop tunnels and simplify.'''
+    
+    streets = gpd.read_parquet(streets_dir + f'streets_{region_id}.pq')
+    
     ## service road removed
     approved_roads = ['living_street',
                      'motorway',
@@ -92,7 +96,6 @@ def process_region_streets(region_hull, region_id, buildings_dir):
     streets = streets.set_crs(epsg=4326).to_crs(epsg=3035)
     streets = streets.sort_values('id')[['id', 'geometry', 'class']].reset_index(drop=True)
 
-
     ## simplify
     buildings = gpd.read_parquet(buildings_dir + f'buildings_{region_id}.parquet', columns=["geometry"])
     simplified = sgeop.simplify_network(
@@ -110,15 +113,7 @@ def read_overture_region_streets(region_hull, region_id):
     gdf = gdf.iloc[gdf.sindex.query(region_hull, predicate='intersects')]
     return gdf
 
-def read_region_streets(region_hull, region_id):
-    read_mask = region_hull.buffer(100)
 
-    streets = gpd.read_parquet(
-        regions_datadir + "streets/central_europe_streets_eubucco_crs.parquet"
-    )
-    streets = streets[streets.intersects(read_mask)].reset_index(drop=True)
-
-    return streets
 
 
 ## from overturemaps-py
@@ -140,7 +135,7 @@ def record_batch_reader(overture_type, bbox=None) -> Optional[pa.RecordBatchRead
         filter = None
 
     dataset = ds.dataset(
-        path, filesystem=fs.S3FileSystem(anonymous=True, region="us-west-2")
+        path, filesystem=fs.S3FileSystem(anonymous=True, region="us-west-2", connect_timeout=5, request_timeout=5)
     )
     batches = dataset.to_batches(filter=filter)
 
@@ -216,6 +211,16 @@ def _dataset_path(overture_type: str) -> str:
     theme = type_theme_map[overture_type]
     return f"overturemaps-us-west-2/release/2024-08-20.0/theme={theme}/type={overture_type}/"
     
+
+def read_region_streets(region_hull, region_id):
+    read_mask = region_hull.buffer(100)
+
+    streets = gpd.read_parquet(
+        regions_datadir + "streets/central_europe_streets_eubucco_crs.parquet"
+    )
+    streets = streets[streets.intersects(read_mask)].reset_index(drop=True)
+
+    return streets
 
 if __name__ == "__main__":
     process_all_regions_streets()

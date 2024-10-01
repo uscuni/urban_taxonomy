@@ -101,7 +101,7 @@ def _interpolate(weights, group):
     return interpolate
 
 @numba.njit(parallel=True)
-def partial_weighted_percentile(rows, cols, partial_vals, centroids, kernel):
+def partial_weighted_percentile(rows, cols, partial_vals, centroids, kernel, bandwidth):
     """rows are the re-mapped focals, cols are re-mapped neighbours"""
     output_vals = 2
     ngroups = len(np.unique(rows))
@@ -126,8 +126,16 @@ def partial_weighted_percentile(rows, cols, partial_vals, centroids, kernel):
         
         not_zero = weights != 0
 
+        if bandwidth == -1:
+            bandwidth = np.max(weights)
+        elif bandwidth == 0:
+            bandwidth = np.mean(weights)
+        else:
+            bandwidth = bandwidth
+            
+
         if kernel == 'gaussian':
-            u = weights / np.max(weights)
+            u = weights / bandwidth
             weights = np.exp(-((u / 2) ** 2)) / (np.sqrt(2) * np.pi)
         elif kernel == 'inverse':
             weights = 1 / weights
@@ -157,8 +165,12 @@ def partial_weighted_percentile(rows, cols, partial_vals, centroids, kernel):
     return result
 
 
-def spatially_weighted_partial_lag(df, graph, centroids, kernel, k, n_splits):
-    """Calculate higher_order neighbours in chunks and calculate spatially-weighted percentiles for values"""
+def spatially_weighted_partial_lag(df, graph, centroids, kernel, k, n_splits, bandwidth=-1):
+    """Calculate higher_order neighbours in chunks and calculate spatially-weighted percentiles for values
+        bandwidth = -1, calculate maximum locally
+        bandiwdth == 0, - calculate mean locally
+        bandwidth > 0: use as constant value
+    """
 
     A = graph.transform("B").sparse
     ids = graph.unique_ids.values
@@ -186,7 +198,7 @@ def spatially_weighted_partial_lag(df, graph, centroids, kernel, k, n_splits):
         partial_centroids = centroids[unique_tail, :]
     
         partial_res = partial_weighted_percentile(
-                rows_to_pass, columns_to_pass, partial_vals, partial_centroids, kernel
+                rows_to_pass, columns_to_pass, partial_vals, partial_centroids, kernel, bandwidth
             )
     
         final_result.iloc[source, :] = partial_res
