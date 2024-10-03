@@ -329,7 +329,7 @@ def process_building_chars(
     buildings["ssbCor"] = mm.corners(buildings, eps=15)
     buildings.loc[buildings['ssbCCo'] >= .95, 'ssbCor'] = 0
     buildings['ssbSqu'] = mm.squareness(buildings, eps=15)
-    buildings.loc[buildings['ssbCCo'] >= .95, 'ssbSqu'] = 90
+    buildings.loc[buildings['ssbCCo'] >= .95, 'ssbSqu'] = 90   # this is technically NA as there's no corner but let's ignore that
     cencon = mm.centroid_corner_distance(buildings, eps=15)
     buildings["ssbCCM"] = cencon["mean"]
     buildings["ssbCCD"] = cencon["std"]

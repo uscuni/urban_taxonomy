@@ -93,6 +93,7 @@ def generate_tess(buildings, enclosures, n_workers=1):
     )
     # deal with split buildings
     tessellation = tessellation.dissolve(by=tessellation.index.values)
+    # this means that a tessellation cell can potentially span across two enclosures? doesn't it break stuff?
 
     # drop empty spaces with no buildings and a positive index,
     # leave negatives in the geodataframe
@@ -100,10 +101,12 @@ def generate_tess(buildings, enclosures, n_workers=1):
     inp, res = buildings.geometry.centroid.sindex.query(tessellation.geometry)
     to_keep = np.append(np.unique(inp), np.where(tessellation.index.values < 0)[0])
     tessellation = tessellation.iloc[to_keep]
+    # why does this happen? 
 
     ### drop any remaining duplicates
     ## sometimes -1s have multiple tesselation cells
     tessellation = tessellation[~tessellation.index.duplicated()].sort_index()
+    # are they identical or have identical id?
     return tessellation
 
 
