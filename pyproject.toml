@@ -20,10 +20,10 @@ core = { path = ".", editable = true }
 [tool.pixi.tasks]
 manual_deps_dir = "mkdir manual_deps"
 clone_shapely = { cmd = "git clone https://github.com/martinfleis/shapely.git manual_deps/shapely/ && cd manual_deps/shapely/ && git checkout vw && git checkout 8260baa4d32abc59893440c0bdd0c2b2b7fac71e && git tag 2.5.0 && python -m pip install --no-deps --disable-pip-version-check -e ."}
-clone_momepy = { cmd = "git clone git@github.com:u3ks/momepy.git manual_deps/momepy/ && cd manual_deps/momepy/ && git checkout tess_single_building && python -m pip install --no-deps --disable-pip-version-check -e ."}
-clone_geoplanar = { cmd = "git clone git@github.com:sjsrey/geoplanar.git manual_deps/geoplanar/ && cd manual_deps/geoplanar/ && python -m pip install --no-deps --disable-pip-version-check -e ."}
-clone_fasthdbscan = { cmd = "git clone git@github.com:TutteInstitute/fast_hdbscan.git manual_deps/fasthdbscan/ && cd manual_deps/fasthdbscan/ && python -m pip install --no-deps --disable-pip-version-check -e ."}
-clone_sgeop = { cmd = "git clone git@github.com:uscuni/sgeop.git manual_deps/sgeop/ && cd manual_deps/sgeop/ && python -m pip install --no-deps --disable-pip-version-check -e ."}
+clone_momepy = { cmd = "git clone https://github.com/u3ks/momepy.git manual_deps/momepy/ && cd manual_deps/momepy/ && git checkout tess_single_building && python -m pip install --no-deps --disable-pip-version-check -e ."}
+clone_geoplanar = { cmd = "git clone https://github.com/sjsrey/geoplanar.git manual_deps/geoplanar/ && cd manual_deps/geoplanar/ && python -m pip install --no-deps --disable-pip-version-check -e ."}
+clone_fasthdbscan = { cmd = "git clone https://github.com/TutteInstitute/fast_hdbscan.git manual_deps/fasthdbscan/ && cd manual_deps/fasthdbscan/ && python -m pip install --no-deps --disable-pip-version-check -e ."}
+clone_sgeop = { cmd = "git clone https://github.com/uscuni/sgeop.git manual_deps/sgeop/ && cd manual_deps/sgeop/ && python -m pip install --no-deps --disable-pip-version-check -e ."}
 
 build = { cmd = "echo 'built manual deps'", depends-on=["manual_deps_dir", "clone_shapely", "clone_momepy", "clone_geoplanar", "clone_fasthdbscan", "clone_sgeop"]}
 
