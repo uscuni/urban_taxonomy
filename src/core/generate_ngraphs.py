@@ -52,10 +52,11 @@ def process_tessellation_graph(region_id, graph_dir, tessellations_dir):
     )
 
     graph = Graph.build_fuzzy_contiguity(tessellation, buffer=1e-6).assign_self_weight()
+    # I know we discussed this but are we sure that we always want a graph with self weights? same below
     graph.to_parquet(
-        graph_dir + f"tessellation_graph_{region_id}_knn1.parquet"
+        graph_dir + f"tessellation_graph_{region_id}_knn1.parquet" # it is not KNN1, can we rename it please?
     )
-    print("Built tess graph knn=1")
+    print("Built tess graph knn=1") # it is not KNN1, can we rename it please?
 
     del graph
     del tessellation
@@ -69,9 +70,9 @@ def process_buildings_graph(region_id, graph_dir, buildings_dir):
     graph = Graph.build_fuzzy_contiguity(buildings, buffer=.25).assign_self_weight()
 
     graph.to_parquet(
-        graph_dir + f"building_graph_{region_id}_knn1.parquet"
+        graph_dir + f"building_graph_{region_id}_knn1.parquet" # it is not KNN1, can we rename it please?
     )
-    print("Built buildings graph knn=1")
+    print("Built buildings graph knn=1") # it is not KNN1, can we rename it please?
 
     del graph
     del buildings
@@ -84,9 +85,9 @@ def process_edges_graph(region_id, graph_dir, streets_dir):
 
     graph = Graph.build_contiguity(streets, rook=False).assign_self_weight()
     graph.to_parquet(
-        graph_dir + f"street_graph_{region_id}_knn1.parquet"
+        graph_dir + f"street_graph_{region_id}_knn1.parquet" # it is not KNN1, can we rename it please?
     )
-    print("Built streets graph knn=1")
+    print("Built streets graph knn=1") # it is not KNN1, can we rename it please?
 
     del graph
     del streets
@@ -99,9 +100,9 @@ def process_enclosure_graph(region_id, graph_dir, enclosures_dir):
 
     graph = Graph.build_contiguity(inputdf, rook=False).assign_self_weight()
     graph.to_parquet(
-        graph_dir + f"enclosure_graph_{region_id}_knn1.parquet"
+        graph_dir + f"enclosure_graph_{region_id}_knn1.parquet" # it is not KNN1, can we rename it please?
     )
-    print("Built enclosure graph knn=1")
+    print("Built enclosure graph knn=1") # it is not KNN1, can we rename it please?
 
 
 def process_nodes_graph(region_id, graph_dir, streets_dir):
@@ -114,9 +115,9 @@ def process_nodes_graph(region_id, graph_dir, streets_dir):
 
     graph = Graph.from_W(w)
     graph.to_parquet(
-        graph_dir + f"nodes_graph_{region_id}_knn1.parquet"
+        graph_dir + f"nodes_graph_{region_id}_knn1.parquet" # it is not KNN1, can we rename it please?
     )
-    print("Built nodes graph knn=1")
+    print("Built nodes graph knn=1") # it is not KNN1, can we rename it please?
 
     del graph
     del streets

@@ -61,6 +61,7 @@ def process_region_buildings(buildings, simplify, simplification_tolerance=.1, m
     ## simplify geometry - most eubucco data has topological issues
     if simplify:
         buildings["geometry"] = buildings.simplify(simplification_tolerance)
+        # this will potentially fuckup topology of adjacent buildings but that is fine, right? as we use fuzzy everywhere?
 
     ## merge buildings that overlap either 1) at least .10 percent or are smaller than 30m^2
     buildings = geoplanar.merge_overlaps(
