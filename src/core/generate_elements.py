@@ -8,26 +8,31 @@ import numpy as np
 from libpysal.graph import Graph
 
 
-def process_all_regions_elements(data_dir, regions_datadir):
+regions_buildings_dir = '/data/uscuni-ulce/regions/buildings/'
+buildings_dir = '/data/uscuni-ulce/processed_data/buildings/'
+overture_streets_dir = '/data/uscuni-ulce/overture_streets/'
+streets_dir = '/data/uscuni-ulce/processed_data/streets/'
+enclosures_dir = '/data/uscuni-ulce/processed_data/enclosures/'
+tessellations_dir = '/data/uscuni-ulce/processed_data/tessellations/'
+
+def process_all_regions_elements():
 
     region_hulls = gpd.read_parquet(
-        regions_datadir + "regions/" + "regions_hull.parquet"
+            regions_datadir + "regions/" + "cadastre_regions_hull.parquet"
     )
 
+    ## run one region at a time, since the inner function is parallelized
     for region_id, region_hull in region_hulls.iterrows():
-        region_hull = region_hull["convex_hull"]
 
-        if region_id != 69300:
-            continue
+        print("----", "Processing region: ", region_id, datetime.datetime.now())
+        enclosures, tesselations = process_region_elements(buildings_data_dir, streets_data_dir, region_id)
 
-        enclosures, tesselations = process_region_elements(region_id)
-
-        enclosures.to_parquet(data_dir + f"enclosures/enclosure_{region_id}.parquet")
+        enclosures.to_parquet(enclosures_dir + f"enclosure_{region_id}.parquet")
         print("Processed enclosures")
         
         ## save files
         tesselations.to_parquet(
-            data_dir + f"tessellations/tessellation_{region_id}.parquet"
+            tessellations_dir + f"tessellation_{region_id}.parquet"
         )
         print("processed tesselations")
 
@@ -132,4 +137,4 @@ def generate_enclosures_representative_points(buildings, streets):
 
 
 if __name__ == "__main__":
-    process_regions()
+    process_all_regions_elements()

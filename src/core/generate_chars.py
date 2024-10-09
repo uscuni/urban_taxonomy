@@ -9,46 +9,44 @@ import pandas as pd
 from libpysal.graph import read_parquet
 from core.utils import partial_apply, partial_describe_reached_agg, partial_mean_intb_dist
 
-def process_regions():
+regions_buildings_dir = '/data/uscuni-ulce/regions/buildings/'
+buildings_dir = '/data/uscuni-ulce/processed_data/buildings/'
+overture_streets_dir = '/data/uscuni-ulce/overture_streets/'
+streets_dir = '/data/uscuni-ulce/processed_data/streets/'
+enclosures_dir = '/data/uscuni-ulce/processed_data/enclosures/'
+tessellations_dir = '/data/uscuni-ulce/processed_data/tessellations/'
+graph_dir = '/data/uscuni-ulce/processed_data/neigh_graphs/'
+chars_dir = '/data/uscuni-ulce/processed_data/chars/'
+
+def process_regions(largest):
+    
     region_hulls = gpd.read_parquet(
         regions_datadir + "regions/" + "regions_hull.parquet"
     )
-    # 69300 - prague
-    # 12199 - small test
-    # large regions = [4, 226, 3607, 8754, 16501, 55713, 62929, 107685, 115457]
-
-    # for region_id, region_hull in region_hulls.iterrows():
-    for region_id in reversed([69300]):
-        print(datetime.datetime.now(), "----Processing ------", region_id)
-
-        process_street_chars(region_id)
-        gc.collect()
-
-        process_enclosure_chars(region_id)
-        gc.collect()
-
-        process_building_chars(region_id)
-        gc.collect()
-
-        process_tessellation_chars(region_id)
-        gc.collect()
-
-
-def run_parallel_regions():
-    building_region_mapping = pd.read_parquet(
-        regions_datadir + "regions/" + "id_to_region.parquet", engine="pyarrow"
-    )
-    counts = building_region_mapping.groupby("region")["id"].size()
-    del building_region_mapping
-    gc.collect()
-    parallel_regions = counts[counts < 6e5].index.values
-
-    from joblib import Parallel, delayed
-
-    n_jobs = -1
-    new = Parallel(n_jobs=n_jobs)(
-        delayed(process_single_region_chars)(region_id) for region_id in parallel_regions
-    )
+        
+    if largest:
+        for region_id in largest_regions:
+            process_single_region_chars(    region_id,
+                                                    graph_dir,
+                                                    buildings_dir,
+                                                    streets_dir,
+                                                    enclosures_dir,
+                                                    tessellations_dir,
+                                                    chars_dir)
+            
+    else:
+        regions_hulls = region_hulls[~region_hulls.index.isin(largest_regions)]
+        from joblib import Parallel, delayed
+        n_jobs = -1
+        new = Parallel(n_jobs=n_jobs)(
+            delayed(process_single_region_chars)(    region_id,
+                                                    graph_dir,
+                                                    buildings_dir,
+                                                    streets_dir,
+                                                    enclosures_dir,
+                                                    tessellations_dir,
+                                                    chars_dir) for region_id, _ in regions_hulls.iterrows()
+                                                        )
 
 
 def process_single_region_chars(
@@ -512,4 +510,5 @@ def process_tessellation_chars(
 
 
 if __name__ == "__main__":
-    process_regions()
+    process_regions(False)
+    process_regions(True)

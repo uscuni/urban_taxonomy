@@ -9,15 +9,22 @@ from libpysal.graph import Graph
 regions_datadir = "/data/uscuni-ulce/"
 data_dir = "/data/uscuni-ulce/processed_data/"
 eubucco_files = glob.glob(regions_datadir + "eubucco_raw/*")
-
+regions_buildings_dir = '/data/uscuni-ulce/regions/buildings/'
+buildings_dir = '/data/uscuni-ulce/processed_data/buildings/'
+overture_streets_dir = '/data/uscuni-ulce/overture_streets/'
+streets_dir = '/data/uscuni-ulce/processed_data/streets/'
+enclosures_dir = '/data/uscuni-ulce/processed_data/enclosures/'
+tessellations_dir = '/data/uscuni-ulce/processed_data/tessellations/'
+graph_dir = '/data/uscuni-ulce/processed_data/neigh_graphs/'
+chars_dir = '/data/uscuni-ulce/processed_data/chars/'
 
 def process_all_regions_graphs():
+    
     region_hulls = gpd.read_parquet(
-        regions_datadir + "regions/" + "regions_hull.parquet"
+        regions_datadir + "regions/" + "cadastre_regions_hull.parquet"
     )
+    
     for region_id, _ in region_hulls.iterrows():
-        if region_id != 69300:
-            continue
 
         print(
             datetime.datetime.now(),
@@ -25,7 +32,14 @@ def process_all_regions_graphs():
             region_id,
         )
 
-        process_region_graphs(region_id)
+        process_region_graphs(
+        region_id,
+        graph_dir,
+        buildings_dir,
+        streets_dir,
+        enclosures_dir,
+        tessellations_dir,
+        )
         
         gc.collect()
 
