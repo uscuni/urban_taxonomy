@@ -30,6 +30,14 @@ from fast_hdbscan.numba_kdtree import kdtree_to_numba
 from sklearn.neighbors import KDTree
 
 
+tessellations_dir = '/data/uscuni-ulce/processed_data/tessellations/'
+chars_dir = "/data/uscuni-ulce/processed_data/chars/"
+graph_dir = "/data/uscuni-ulce/processed_data/neigh_graphs/"
+morphotopes_dir = '/data/uscuni-ulce/processed_data/morphotopes/'
+
+
+
+
 def preprocess_clustering_data(X_train, clip, to_drop):
     '''Data pre-processing before clustering is carried out.'''
     ## drop non-buildings
@@ -168,3 +176,104 @@ def cluster_data(X_train, graph, to_drop, clip, min_cluster_size, linkage, metri
     assert (X_train[X_train.index >= 0].index == region_cluster_labels.index).all()
     
     return region_cluster_labels
+
+
+
+def percentile(n):
+    def percentile_(x):
+        return np.percentile(x, n)
+    percentile_.__name__ = 'percentile_%s' % n
+    return percentile_
+    
+
+def process_single_region_morphotopes(region_id):
+
+    print(datetime.datetime.now(), "----Processing ------", region_id)
+    X_train = pd.read_parquet(chars_dir + f'primary_chars_{region_id}.parquet')
+    graph = read_parquet(graph_dir + f"tessellation_graph_{region_id}.parquet")
+    tessellation = gpd.read_parquet(
+            tessellations_dir + f"tessellation_{region_id}.parquet"
+    )
+    
+    building_graph = graph.subgraph(graph.unique_ids[graph.unique_ids >= 0])
+    labels = building_graph.component_labels
+
+
+    ### clustering parameters
+    min_cluster_size = 100
+    spatial_lag = 3
+    kernel='gaussian'
+    
+    # to_drop = []
+    # to_drop = ['stcSAl', 'stcOri']
+    # to_drop = [
+    #        'stcSAl',
+    #        'ltkOri',
+    #          'stbOri',
+    #          'stcOri',
+    #          'stbCeA'
+    # ]
+    
+    # least important 10 features
+    to_drop = ['sdsLen', 'sssLin', 'ltcBuA', 'lcnClo', 'mtbSWR', 'ssbCor', 'xcnSCl',
+           'mtdDeg', 'libNCo', 'sdbCoA']
+    
+    lag_type = '_median'
+    
+    clip = None
+    linkage='ward'
+    metric='euclidean'
+
+    print("--------Generating lag----------")
+    ## generate lag, filter and attack to data
+    lag = spatially_weighted_partial_lag(X_train, graph, centroids, kernel=kernel, k=spatial_lag, n_splits=10, bandwidth=-1)
+    lag = lag[[c for c in lag.columns if lag_type in c]]
+    clustering_data = X_train.join(lag, how='inner')
+
+    print("--------Generating morphotopes----------")
+    # run morphotopes clustering
+    region_cluster_labels = cluster_data(clustering_data, graph, to_drop, clip, min_cluster_size, linkage, metric)
+    region_cluster_labels.to_parquet(morphotopes_dir + f'tessellation_labels_morphotopes_{region_id}_{min_cluster_size}_{spatial_lag}_{lag_type}_{kernel}.pq')
+
+    ## generate morphotopes boundaries
+    # clrs_geometry = tessellation.loc[region_cluster_labels.index]
+    # clrs_geometry['label'] = region_cluster_labels.values
+    # clrs_geometry = clrs_geometry.dissolve('label').simplify(1).to_frame()
+    # clrs_geometry.columns = ['geometry']
+    # morph_clrs_geometry = clrs_geometry.set_geometry('geometry').reset_index()
+    # morph_clrs_geometry.to_parquet(morphotopes_dir + f'shapes_morphotopes_{region_id}_{min_cluster_size}_{spatial_lag}_{lag_type}_{kernel}.pq')
+
+    # generate morphotopes data
+    print("--------Generating morphotopes data----------")
+    component_data = X_train.loc[region_cluster_labels.index]
+    component_data = component_data.groupby(region_cluster_labels.values).agg([percentile(10), 
+                                                             'median', 
+                                                             percentile(90)])
+    # save sizes for clustering
+    component_data[('Size', 'Size')] = X_train.loc[region_cluster_labels.index].groupby(region_cluster_labels.values).size()
+
+    # store morphotopes data
+    component_data.to_parquet(morphotopes_dir + f'data_morphotopes_{region_id}_{min_cluster_size}_{spatial_lag}_{lag_type}_{kernel}.pq')
+
+
+def process_regions(largest):
+
+    region_hulls = gpd.read_parquet(
+        regions_datadir + "regions/" + "cadastre_regions_hull.parquet"
+    )
+
+    if largest:
+        for region_id in largest_regions:
+            process_single_region_morphotopes(region_id)
+            
+    else:
+        regions_hulls = region_hulls[~region_hulls.index.isin(largest_regions)]
+        from joblib import Parallel, delayed
+        n_jobs = -1
+        new = Parallel(n_jobs=n_jobs)(
+            delayed(process_single_region_morphotopes)(region_id) for region_id, _ in regions_hulls.iterrows()
+        )
+
+if __name__ == '__main__':
+    process_regions(largest=False)
+    process_regions(largest=True)

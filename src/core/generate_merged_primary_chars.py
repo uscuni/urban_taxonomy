@@ -14,25 +14,19 @@ chars_dir = "/data/uscuni-ulce/processed_data/chars/"
 
 
 def process_regions():
+    
     region_hulls = gpd.read_parquet(
-        regions_datadir + "regions/" + "regions_hull.parquet"
+            regions_datadir + "regions/" + "cadastre_regions_hull.parquet"
     )
-    for region_id, _ in region_hulls.iterrows():
-        if region_id != 69300:
-            continue
 
-        print(
-            datetime.datetime.now(),
-            "----Processing ------",
-            region_id,
-        )
-
-        generate_merged(region_id)
-
-        gc.collect()
+    from joblib import Parallel, delayed
+        n_jobs = -1
+        new = Parallel(n_jobs=n_jobs)(
+            delayed(merge_into_primary)(region_id) for region_id, _ in regions_hulls.iterrows()
+    )
 
 
-def generate_merged(region_id):
+def merge_into_primary(region_id):
     tessellation = gpd.read_parquet(
         chars_dir + f"tessellations/chars_{region_id}.parquet"
     )
@@ -78,4 +72,6 @@ def generate_merged(region_id):
     )
     merged = merged.set_index(tessellation.index)
     primary = merged[list(used_keys.keys())]
-    return primary
+
+
+    primary.to_parquet(chars_dir + f'primary_chars_{region_id}.parquet')

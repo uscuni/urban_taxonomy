@@ -6,7 +6,7 @@ import geopandas as gpd
 import momepy as mm
 import numpy as np
 from libpysal.graph import Graph
-
+from shapely import GEOSException
 
 regions_buildings_dir = '/data/uscuni-ulce/regions/buildings/'
 buildings_dir = '/data/uscuni-ulce/processed_data/buildings/'
@@ -61,18 +61,19 @@ def process_region_elements(buildings_data_dir, streets_data_dir, region_id):
     ## there are only 2 buildings in the entire dataset that have the issue in regions - 47090,21894
     try:
     
-        tesselations = generate_tess(buildings.make_valid().normalize(),
-                             enclosures.make_valid().normalize(),
+        tesselations = generate_tess(buildings,
+                             enclosures,
                              n_workers=-1)
     
     except GEOSException as e:
         txt = str(e)
+        print('Problem with topology, ', txt)
         problem_point_coords = [float(s) for s in txt[45:].split('. T')[0].split(' ')]
         problem_point = Point(*problem_point_coords)
         problem_building = buildings.iloc[buildings.sindex.query(problem_point, predicate='intersects')]
         buildings = buildings.drop(buildings.sindex.query(problem_point, predicate='intersects'))
-        tesselations = generate_tess(buildings.make_valid().normalize(),
-                             enclosures.make_valid().normalize(),
+        tesselations = generate_tess(buildings,
+                             enclosures,
                              n_workers=-1)
 
 

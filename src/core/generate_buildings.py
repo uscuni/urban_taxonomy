@@ -10,7 +10,7 @@ from core.utils import largest_regions
 regions_datadir = "/data/uscuni-ulce/"
 data_dir = "/data/uscuni-ulce/processed_data/"
 eubucco_files = glob.glob(regions_datadir + "eubucco_raw/*")
-buildings_dir = '/data/uscuni-ulce/processed_data/buildings/'
+buildings_dir = '/data/uscuni-ulce/processed_data/simplified_buildings/'
 regions_buildings_dir = '/data/uscuni-ulce/regions/buildings/'
 
 def process_regions(largest):
@@ -130,5 +130,5 @@ def read_region_buildings(typed_dict, region_ids, region_hull, region_id):
 
 
 if __name__ == "__main__":
-    # process_regions(False)
+    process_regions(False)
     process_regions(True)
