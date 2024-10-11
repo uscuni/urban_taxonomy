@@ -67,7 +67,7 @@ def process_tessellation_graph(region_id, graph_dir, tessellations_dir):
 
     graph = Graph.build_fuzzy_contiguity(tessellation, buffer=1e-6).assign_self_weight()
     graph.to_parquet(
-        graph_dir + f"tessellation_graph_{region_id}_knn1.parquet"
+        graph_dir + f"tessellation_graph_{region_id}.parquet"
     )
     print("Built tess graph knn=1")
 
@@ -83,7 +83,7 @@ def process_buildings_graph(region_id, graph_dir, buildings_dir):
     graph = Graph.build_fuzzy_contiguity(buildings, buffer=.25).assign_self_weight()
 
     graph.to_parquet(
-        graph_dir + f"building_graph_{region_id}_knn1.parquet"
+        graph_dir + f"building_graph_{region_id}.parquet"
     )
     print("Built buildings graph knn=1")
 
@@ -98,7 +98,7 @@ def process_edges_graph(region_id, graph_dir, streets_dir):
 
     graph = Graph.build_contiguity(streets, rook=False).assign_self_weight()
     graph.to_parquet(
-        graph_dir + f"street_graph_{region_id}_knn1.parquet"
+        graph_dir + f"street_graph_{region_id}.parquet"
     )
     print("Built streets graph knn=1")
 
@@ -113,7 +113,7 @@ def process_enclosure_graph(region_id, graph_dir, enclosures_dir):
 
     graph = Graph.build_contiguity(inputdf, rook=False).assign_self_weight()
     graph.to_parquet(
-        graph_dir + f"enclosure_graph_{region_id}_knn1.parquet"
+        graph_dir + f"enclosure_graph_{region_id}.parquet"
     )
     print("Built enclosure graph knn=1")
 
@@ -128,7 +128,7 @@ def process_nodes_graph(region_id, graph_dir, streets_dir):
 
     graph = Graph.from_W(w)
     graph.to_parquet(
-        graph_dir + f"nodes_graph_{region_id}_knn1.parquet"
+        graph_dir + f"nodes_graph_{region_id}.parquet"
     )
     print("Built nodes graph knn=1")
 

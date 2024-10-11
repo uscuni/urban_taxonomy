@@ -8,7 +8,9 @@ import numpy as np
 import pandas as pd
 from libpysal.graph import read_parquet
 from core.utils import partial_apply, partial_describe_reached_agg, partial_mean_intb_dist
+from core.utils import largest_regions
 
+regions_datadir = "/data/uscuni-ulce/"
 regions_buildings_dir = '/data/uscuni-ulce/regions/buildings/'
 buildings_dir = '/data/uscuni-ulce/processed_data/buildings/'
 overture_streets_dir = '/data/uscuni-ulce/overture_streets/'
@@ -21,7 +23,7 @@ chars_dir = '/data/uscuni-ulce/processed_data/chars/'
 def process_regions(largest):
     
     region_hulls = gpd.read_parquet(
-        regions_datadir + "regions/" + "regions_hull.parquet"
+        regions_datadir + "regions/" + "cadastre_regions_hull.parquet"
     )
         
     if largest:
@@ -152,7 +154,7 @@ def process_street_chars(
     street_orientation = mm.orientation(edges)
     edges["sssLin"] = mm.linearity(edges)
 
-    str_q1 = read_parquet(graph_dir + f"street_graph_{region_id}_knn1.parquet")
+    str_q1 = read_parquet(graph_dir + f"street_graph_{region_id}.parquet")
 
     def mean_edge_length(partical_focals, partial_higher, y):
         return partial_higher.describe(
@@ -214,7 +216,7 @@ def process_street_chars(
     edges["sdsSWD"] = profile["width_deviation"]
 
     ## nodes tessellation interactions
-    nodes_graph = read_parquet(graph_dir + f"nodes_graph_{region_id}_knn1.parquet")
+    nodes_graph = read_parquet(graph_dir + f"nodes_graph_{region_id}.parquet")
 
     edges["nID"] = edges.index.values
     tessellation["nID"] = tess_nid
@@ -274,7 +276,7 @@ def process_enclosure_chars(
     enclosures["lskCWA"] = mm.compactness_weighted_axis(enclosures)
     enclosures["ltkOri"] = mm.orientation(enclosures)
 
-    blo_q1 = read_parquet(graph_dir + f"enclosure_graph_{region_id}_knn1.parquet")
+    blo_q1 = read_parquet(graph_dir + f"enclosure_graph_{region_id}.parquet")
     enclosures["ltkWNB"] = mm.neighbors(enclosures, blo_q1, weighted=True)
 
 
@@ -349,13 +351,13 @@ def process_building_chars(
             mm.shared_walls(buildings.set_precision(1e-6), strict=False, tolerance=.15) / buildings.geometry.length
         )
 
-    buildings_q1 = read_parquet(graph_dir + f"building_graph_{region_id}_knn1.parquet")
+    buildings_q1 = read_parquet(graph_dir + f"building_graph_{region_id}.parquet")
     buildings["libNCo"] = mm.courtyards(buildings, buildings_q1, buffer=.25)
     buildings["ldbPWL"] = mm.perimeter_wall(buildings, buildings_q1, buffer=.25)
 
     ## building tessellation interactions
 
-    queen_1 = read_parquet(graph_dir + f"tessellation_graph_{region_id}_knn1.parquet")
+    queen_1 = read_parquet(graph_dir + f"tessellation_graph_{region_id}.parquet")
     bgraph = queen_1.subgraph(buildings_q1.unique_ids)
 
     buildings["ltcBuA"] = mm.building_adjacency(buildings_q1, bgraph)
@@ -436,7 +438,7 @@ def process_tessellation_chars(
     tessellation["sscCCo"] = mm.circular_compactness(tessellation)
     tessellation["sscERI"] = mm.equivalent_rectangular_index(tessellation.geometry)
 
-    queen_1 = read_parquet(graph_dir + f"tessellation_graph_{region_id}_knn1.parquet")
+    queen_1 = read_parquet(graph_dir + f"tessellation_graph_{region_id}.parquet")
     tessellation["mtcWNe"] = mm.neighbors(tessellation, queen_1, weighted=True)
     tessellation["mdcAre"] = queen_1.describe(
         tessellation.geometry.area, statistics=["sum"]

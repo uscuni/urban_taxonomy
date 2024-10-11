@@ -112,6 +112,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/h11-0.14.0-pyhd8ed1ab_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/noarch/h2-4.1.0-pyhd8ed1ab_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/linux-64/harfbuzz-9.0.0-hda332d3_1.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/hdbscan-0.8.38.post2-py312hc0a28a1_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/hdf4-4.2.15-h2a13503_7.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/hdf5-1.14.3-nompi_hdf9ad27_105.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/holoviews-1.18.3-pyhd8ed1ab_0.conda
@@ -1586,7 +1587,7 @@ packages:
   name: core
   version: 0.1.0
   path: .
-  sha256: 524d1bdde07037bfc00854d9bcaec8705a5ddce2a1364bc4d438c67bc783755c
+  sha256: bc780d68f5702f4defc99411192ed45b9aec31be1ab60531d10b70092bac2da5
   requires_python: '>=3.12.4'
   editable: true
 - kind: conda
@@ -2479,6 +2480,29 @@ packages:
   purls: []
   size: 1603653
   timestamp: 1721186240105
+- kind: conda
+  name: hdbscan
+  version: 0.8.38.post2
+  build: py312hc0a28a1_0
+  subdir: linux-64
+  url: https://conda.anaconda.org/conda-forge/linux-64/hdbscan-0.8.38.post2-py312hc0a28a1_0.conda
+  sha256: b12de47fd06798722ab2561fc24b55713273e527070d0c47841c68d71cd627c6
+  md5: d5aea05caf0f4a3bce863467b901164c
+  depends:
+  - __glibc >=2.17,<3.0.a0
+  - joblib >=1.0
+  - libgcc >=13
+  - numpy >=1.19,<3
+  - python >=3.12,<3.13.0a0
+  - python_abi 3.12.* *_cp312
+  - scikit-learn >=0.20
+  - scipy >=1.0
+  license: BSD-3-Clause
+  license_family: BSD
+  purls:
+  - pkg:pypi/hdbscan?source=hash-mapping
+  size: 645830
+  timestamp: 1728396060108
 - kind: conda
   name: hdf4
   version: 4.2.15

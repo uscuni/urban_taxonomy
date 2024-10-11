@@ -93,7 +93,7 @@ def post_process_clusters(component_buildings_data, component_graph, component_c
     return component_clusters
 
 
-def get_clusters(linkage_matrix, min_cluster_size, eom_clusters=True):
+def get_clusters(linkage_matrix, min_cluster_size, n_samples, eom_clusters=True):
     '''Extract hdbscan cluster types from a linkage matrix.'''
     condensed_tree = condense_tree(linkage_matrix, 
                                min_cluster_size=min_cluster_size)
@@ -108,7 +108,8 @@ def get_clusters(linkage_matrix, min_cluster_size, eom_clusters=True):
         selected_clusters = extract_leaves(
                 condensed_tree, allow_single_cluster=False
             )
-    return get_cluster_label_vector(condensed_tree, selected_clusters, 0)
+    
+    return get_cluster_label_vector(condensed_tree, selected_clusters, 0, n_samples)
 
 
 
@@ -142,7 +143,7 @@ def cluster_data(X_train, graph, to_drop, clip, min_cluster_size, linkage, metri
             # check if ward tree distances are always increasing
             assert (ward_tree[1:, 2] >= ward_tree[0:-1, 2]).all()
             
-            component_clusters = get_clusters(ward_tree, min_cluster_size, eom_clusters=True)
+            component_clusters = get_clusters(ward_tree, min_cluster_size, component_buildings_data.shape[0], eom_clusters=True)
                 
             component_clusters = post_process_clusters(component_buildings_data, component_graph, component_clusters)
             
