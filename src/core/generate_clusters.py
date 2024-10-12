@@ -8,16 +8,14 @@ import pandas as pd
 from libpysal.graph import read_parquet
 from sklearn.preprocessing import PowerTransformer, RobustScaler, StandardScaler
 from scipy import stats
+import shapely
 
 from sklearn.neighbors import KDTree
-
 from sklearn.cluster import AgglomerativeClustering
 from scipy.cluster.hierarchy import dendrogram
 from scipy.cluster.hierarchy import fcluster
 from sklearn.metrics import adjusted_rand_score
 from sklearn.metrics import davies_bouldin_score
-from core.cluster_validation import get_linkage_matrix
-
 from fast_hdbscan.cluster_trees import (
     cluster_tree_from_condensed_tree,
     condense_tree,
@@ -27,7 +25,9 @@ from fast_hdbscan.cluster_trees import (
     mst_to_linkage_tree,
 )
 from fast_hdbscan.numba_kdtree import kdtree_to_numba
-from sklearn.neighbors import KDTree
+import datetime
+from core.cluster_validation import get_linkage_matrix
+from core.generate_context import spatially_weighted_partial_lag
 
 
 tessellations_dir = '/data/uscuni-ulce/processed_data/tessellations/'
@@ -206,17 +206,17 @@ def process_single_region_morphotopes(region_id):
     
     # to_drop = []
     # to_drop = ['stcSAl', 'stcOri']
-    # to_drop = [
-    #        'stcSAl',
-    #        'ltkOri',
-    #          'stbOri',
-    #          'stcOri',
-    #          'stbCeA'
-    # ]
+    to_drop = [
+           'stcSAl',
+           'ltkOri',
+             'stbOri',
+             'stcOri',
+             'stbCeA'
+    ]
     
     # least important 10 features
-    to_drop = ['sdsLen', 'sssLin', 'ltcBuA', 'lcnClo', 'mtbSWR', 'ssbCor', 'xcnSCl',
-           'mtdDeg', 'libNCo', 'sdbCoA']
+    # to_drop = ['sdsLen', 'sssLin', 'ltcBuA', 'lcnClo', 'mtbSWR', 'ssbCor', 'xcnSCl',
+    #        'mtdDeg', 'libNCo', 'sdbCoA']
     
     lag_type = '_median'
     
@@ -226,6 +226,8 @@ def process_single_region_morphotopes(region_id):
 
     print("--------Generating lag----------")
     ## generate lag, filter and attack to data
+    
+    centroids = shapely.get_coordinates(tessellation.representative_point())
     lag = spatially_weighted_partial_lag(X_train, graph, centroids, kernel=kernel, k=spatial_lag, n_splits=10, bandwidth=-1)
     lag = lag[[c for c in lag.columns if lag_type in c]]
     clustering_data = X_train.join(lag, how='inner')
@@ -233,7 +235,7 @@ def process_single_region_morphotopes(region_id):
     print("--------Generating morphotopes----------")
     # run morphotopes clustering
     region_cluster_labels = cluster_data(clustering_data, graph, to_drop, clip, min_cluster_size, linkage, metric)
-    region_cluster_labels.to_parquet(morphotopes_dir + f'tessellation_labels_morphotopes_{region_id}_{min_cluster_size}_{spatial_lag}_{lag_type}_{kernel}.pq')
+    region_cluster_labels.to_frame('morphotope_label').to_parquet(morphotopes_dir + f'tessellation_labels_morphotopes_{region_id}_{min_cluster_size}_{spatial_lag}_{lag_type}_{kernel}.pq')
 
     ## generate morphotopes boundaries
     # clrs_geometry = tessellation.loc[region_cluster_labels.index]
