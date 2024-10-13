@@ -34,9 +34,9 @@ tessellations_dir = '/data/uscuni-ulce/processed_data/tessellations/'
 chars_dir = "/data/uscuni-ulce/processed_data/chars/"
 graph_dir = "/data/uscuni-ulce/processed_data/neigh_graphs/"
 morphotopes_dir = '/data/uscuni-ulce/processed_data/morphotopes/'
+regions_datadir = "/data/uscuni-ulce/"
 
-
-
+from core.utils import largest_regions
 
 def preprocess_clustering_data(X_train, clip, to_drop):
     '''Data pre-processing before clustering is carried out.'''

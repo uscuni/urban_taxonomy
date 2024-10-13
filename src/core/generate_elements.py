@@ -7,6 +7,7 @@ import momepy as mm
 import numpy as np
 from libpysal.graph import Graph
 from shapely import GEOSException
+from shapely import Point
 
 regions_buildings_dir = '/data/uscuni-ulce/regions/buildings/'
 buildings_dir = '/data/uscuni-ulce/processed_data/buildings/'
@@ -84,31 +85,36 @@ def process_region_elements(buildings_data_dir, streets_data_dir, region_id):
     tesselation_coverage = np.isin(
         buildings.index.values, tesselations.index.values
     )
-    if not tesselation_coverage.all():
+    num_problem_buildings = 0
+    
+    while (not tesselation_coverage.all()):
         print(
             "Retrying tesselation with less buildings, potentially changing building data."
         )
         ## assume all missing buildings are problematic polygons, drop them and retry the tessellation
-        num_problem_buildings = (~tesselation_coverage).sum()
+        num_problem_buildings += (~tesselation_coverage).sum()
         buildings = buildings[tesselation_coverage].reset_index()
         enclosures = generate_enclosures_representative_points(buildings, streets)
         tesselations = generate_tess(buildings, enclosures, n_workers=-1)
         tesselation_coverage = np.isin(
             buildings.index.values, tesselations.index.values
         )
-        # if this results in a correct tesselation, save the new region buildings
-        if tesselation_coverage.all():
-            print(
-                "Dropping",
-                num_problem_buildings,
-                "buildings due to tesselation problems",
-            )
-            buildings.to_parquet(
-                buildings_data_dir + f"buildings_{region_id}.parquet"
-            )
 
     # quality check, there should be at least one tess cell per building in the end.
     assert tesselation_coverage.all()
+    
+    # if this results in a correct tesselation, save the new region buildings
+    if num_problem_buildings >= 1:
+        print(
+            "Dropping",
+            num_problem_buildings,
+            "buildings due to tesselation problems",
+        )
+        buildings.to_parquet(
+            buildings_data_dir + f"buildings_{region_id}.parquet"
+        )
+
+
 
     # free some memory
     del buildings

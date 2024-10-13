@@ -27,12 +27,12 @@ def process_regions():
     from joblib import Parallel, delayed
     n_jobs = -1
     new = Parallel(n_jobs=n_jobs)(
-        delayed(merge_into_primary)(region_id) for region_id, _ in regions_hulls.iterrows()
+        delayed(merge_into_primary)(region_id) for region_id, _ in region_hulls.iterrows()
     )
 
 
 def merge_into_primary(region_id):
-    
+    print("Processing region", region_id)
     tessellation = gpd.read_parquet(chars_dir + f"tessellations_chars_{region_id}.parquet")
     buildings = gpd.read_parquet(chars_dir + f"buildings_chars_{region_id}.parquet")
     enclosures = gpd.read_parquet(chars_dir + f"enclosures_chars_{region_id}.parquet")
@@ -79,3 +79,7 @@ def merge_into_primary(region_id):
 
     primary = merged[list(used_keys.keys())]
     primary.to_parquet(chars_dir + f'primary_chars_{region_id}.parquet')
+
+
+if __name__ == '__main__':
+    process_regions()
