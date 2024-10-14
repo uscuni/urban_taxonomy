@@ -204,21 +204,22 @@ def process_single_region_morphotopes(region_id):
     spatial_lag = 3
     kernel='gaussian'
     
-    # to_drop = []
+    to_drop = []
     # to_drop = ['stcSAl', 'stcOri']
-    to_drop = [
-           'stcSAl',
-           'ltkOri',
-             'stbOri',
-             'stcOri',
-             'stbCeA'
-    ]
+    # to_drop = [
+    #        'stcSAl',
+    #        'ltkOri',
+    #          'stbOri',
+    #          'stcOri',
+    #          'stbCeA'
+    # ]
     
     # least important 10 features
     # to_drop = ['sdsLen', 'sssLin', 'ltcBuA', 'lcnClo', 'mtbSWR', 'ssbCor', 'xcnSCl',
     #        'mtdDeg', 'libNCo', 'sdbCoA']
     
-    lag_type = '_median'
+    # lag_type = '_median'
+    lag_type = None
     
     clip = None
     linkage='ward'
@@ -227,10 +228,14 @@ def process_single_region_morphotopes(region_id):
     print("--------Generating lag----------")
     ## generate lag, filter and attack to data
     
-    centroids = shapely.get_coordinates(tessellation.representative_point())
-    lag = spatially_weighted_partial_lag(X_train, graph, centroids, kernel=kernel, k=spatial_lag, n_splits=10, bandwidth=-1)
-    lag = lag[[c for c in lag.columns if lag_type in c]]
-    clustering_data = X_train.join(lag, how='inner')
+    
+    if lag_type is not None:
+        centroids = shapely.get_coordinates(tessellation.representative_point())
+        lag = spatially_weighted_partial_lag(X_train, graph, centroids, kernel=kernel, k=spatial_lag, n_splits=10, bandwidth=-1)
+        lag = lag[[c for c in lag.columns if lag_type in c]]
+        clustering_data = X_train.join(lag, how='inner')
+    else:
+        clustering_data = X_train
 
     print("--------Generating morphotopes----------")
     # run morphotopes clustering
@@ -269,13 +274,13 @@ def process_regions(largest):
             process_single_region_morphotopes(region_id)
             
     else:
-        regions_hulls = region_hulls[~region_hulls.index.isin(largest_regions)]
+        # region_hulls = region_hulls[~region_hulls.index.isin(largest_regions)]
         from joblib import Parallel, delayed
         n_jobs = -1
         new = Parallel(n_jobs=n_jobs)(
-            delayed(process_single_region_morphotopes)(region_id) for region_id, _ in regions_hulls.iterrows()
+            delayed(process_single_region_morphotopes)(region_id) for region_id, _ in region_hulls.iterrows()
         )
 
 if __name__ == '__main__':
     process_regions(largest=False)
-    process_regions(largest=True)
+    # process_regions(largest=True)
