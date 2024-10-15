@@ -121,7 +121,7 @@ def get_clusters(linkage_matrix, min_cluster_size, n_samples, eom_clusters=True)
 
 
 
-def cluster_data(X_train, graph, to_drop, clip, min_cluster_size, linkage, metric):
+def cluster_data(X_train, graph, to_drop, clip, min_cluster_size, linkage, metric, eom_clusters=True):
     '''Split the input data into connected components and carry out an agglomerative clustering for each component independently.
     Pre-process the input data, cluster and then carry out post-processing and finally combine all the seperate clusterings into one set of clusters.'''
     
@@ -151,7 +151,7 @@ def cluster_data(X_train, graph, to_drop, clip, min_cluster_size, linkage, metri
             # check if ward tree distances are always increasing
             assert (ward_tree[1:, 2] >= ward_tree[0:-1, 2]).all()
             
-            component_clusters = get_clusters(ward_tree, min_cluster_size, component_buildings_data.shape[0], eom_clusters=True)
+            component_clusters = get_clusters(ward_tree, min_cluster_size, component_buildings_data.shape[0], eom_clusters=eom_clusters)
                 
             component_clusters = post_process_clusters(component_buildings_data, component_graph, component_clusters)
             
@@ -201,29 +201,14 @@ def process_single_region_morphotopes(region_id):
 
     ### clustering parameters
     min_cluster_size = 100
-    spatial_lag = 3
-    kernel='gaussian'
-    
+    spatial_lag = 0
+    kernel='None'    
     to_drop = []
-    # to_drop = ['stcSAl', 'stcOri']
-    # to_drop = [
-    #        'stcSAl',
-    #        'ltkOri',
-    #          'stbOri',
-    #          'stcOri',
-    #          'stbCeA'
-    # ]
-    
-    # least important 10 features
-    # to_drop = ['sdsLen', 'sssLin', 'ltcBuA', 'lcnClo', 'mtbSWR', 'ssbCor', 'xcnSCl',
-    #        'mtdDeg', 'libNCo', 'sdbCoA']
-    
-    # lag_type = '_median'
     lag_type = None
-    
     clip = None
     linkage='ward'
     metric='euclidean'
+    eom_clusters = False
 
     print("--------Generating lag----------")
     ## generate lag, filter and attack to data
@@ -239,8 +224,8 @@ def process_single_region_morphotopes(region_id):
 
     print("--------Generating morphotopes----------")
     # run morphotopes clustering
-    region_cluster_labels = cluster_data(clustering_data, graph, to_drop, clip, min_cluster_size, linkage, metric)
-    region_cluster_labels.to_frame('morphotope_label').to_parquet(morphotopes_dir + f'tessellation_labels_morphotopes_{region_id}_{min_cluster_size}_{spatial_lag}_{lag_type}_{kernel}.pq')
+    region_cluster_labels = cluster_data(clustering_data, graph, to_drop, clip, min_cluster_size, linkage, metric, eom_clusters=eom_clusters)
+    region_cluster_labels.to_frame('morphotope_label').to_parquet(morphotopes_dir + f'tessellation_labels_morphotopes_{region_id}_{min_cluster_size}_{spatial_lag}_{lag_type}_{kernel}_{eom_clusters}.pq')
 
     ## generate morphotopes boundaries
     # clrs_geometry = tessellation.loc[region_cluster_labels.index]
@@ -260,7 +245,7 @@ def process_single_region_morphotopes(region_id):
     component_data[('Size', 'Size')] = X_train.loc[region_cluster_labels.index].groupby(region_cluster_labels.values).size()
 
     # store morphotopes data
-    component_data.to_parquet(morphotopes_dir + f'data_morphotopes_{region_id}_{min_cluster_size}_{spatial_lag}_{lag_type}_{kernel}.pq')
+    component_data.to_parquet(morphotopes_dir + f'data_morphotopes_{region_id}_{min_cluster_size}_{spatial_lag}_{lag_type}_{kernel}_{eom_clusters}.pq')
 
 
 def process_regions(largest):
