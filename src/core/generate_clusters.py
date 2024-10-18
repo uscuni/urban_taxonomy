@@ -134,7 +134,7 @@ def cluster_data(X_train, graph, to_drop, clip, min_cluster_size, linkage, metri
     for label, group in labels.groupby(labels):
     
         if group.shape[0] <= min_cluster_size:
-            component_clusters = np.ones(group.shape[0])
+            component_clusters = np.full(group.shape[0], -1)
     
         else:
             component_buildings_data = preprocess_clustering_data(X_train.loc[group.index.values], clip=clip, to_drop=to_drop)
@@ -153,14 +153,13 @@ def cluster_data(X_train, graph, to_drop, clip, min_cluster_size, linkage, metri
             
             component_clusters = get_clusters(ward_tree, min_cluster_size, component_buildings_data.shape[0], eom_clusters=eom_clusters)
                 
-            component_clusters = post_process_clusters(component_buildings_data, component_graph, component_clusters)
+            # component_clusters = post_process_clusters(component_buildings_data, component_graph, component_clusters)
             
-            for c in np.unique(component_clusters):
-                # if c == -1: continue
-                cluster_graph = component_graph.subgraph(group.index[component_clusters == c].values)
-                assert cluster_graph.n_components == 1
+            # for c in np.unique(component_clusters):
+            #     # if c == -1: continue
+            #     cluster_graph = component_graph.subgraph(group.index[component_clusters == c].values)
+            #     assert cluster_graph.n_components == 1
         
-            # if label ==3: break
         results[label] = component_clusters
 
     ### relabel local clusters(0,1,2,0,1) to regional clusters(0_0,0_1,0_2, 0_0,0_1,) etc
@@ -201,11 +200,20 @@ def process_single_region_morphotopes(region_id):
 
     ### clustering parameters
     min_cluster_size = 100
-    spatial_lag = 0
-    kernel='None'    
-    to_drop = []
+    
+    # spatial_lag = 3
+    # kernel='gaussian' 
+    # lag_type = '_median'
+
     lag_type = None
+    spatial_lag = 0
+    kernel='None'
+
     clip = None
+    to_drop = ['stcSAl','stbOri','stcOri','stbCeA', 
+               'ldkAre', 'ldkPer', 'lskCCo', 'lskERI',
+               'lskCWA', 'ltkOri', 'ltkWNB', 'likWBB', 'likWCe']
+    
     linkage='ward'
     metric='euclidean'
     eom_clusters = False
@@ -238,9 +246,9 @@ def process_single_region_morphotopes(region_id):
     # generate morphotopes data
     print("--------Generating morphotopes data----------")
     component_data = X_train.loc[region_cluster_labels.index]
-    component_data = component_data.groupby(region_cluster_labels.values).agg([percentile(10), 
+    component_data = component_data.groupby(region_cluster_labels.values).agg([percentile(25), 
                                                              'median', 
-                                                             percentile(90)])
+                                                             percentile(75), 'std', 'mean'] )
     # save sizes for clustering
     component_data[('Size', 'Size')] = X_train.loc[region_cluster_labels.index].groupby(region_cluster_labels.values).size()
 
@@ -260,6 +268,7 @@ def process_regions(largest):
             
     else:
         # region_hulls = region_hulls[~region_hulls.index.isin(largest_regions)]
+        region_hulls = region_hulls[region_hulls.index == 69333]
         from joblib import Parallel, delayed
         n_jobs = -1
         new = Parallel(n_jobs=n_jobs)(

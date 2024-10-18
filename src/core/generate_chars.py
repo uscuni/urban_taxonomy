@@ -9,6 +9,7 @@ import pandas as pd
 from libpysal.graph import read_parquet
 from core.utils import partial_apply, partial_describe_reached_agg, partial_mean_intb_dist
 from core.utils import largest_regions
+from shapely import unary_union
 
 regions_datadir = "/data/uscuni-ulce/"
 regions_buildings_dir = '/data/uscuni-ulce/regions/buildings/'
@@ -351,9 +352,33 @@ def process_building_chars(
             mm.shared_walls(buildings.set_precision(1e-6), strict=False, tolerance=.15) / buildings.geometry.length
         )
 
+    ### add the connected structure characters
     buildings_q1 = read_parquet(graph_dir + f"building_graph_{region_id}.parquet")
     buildings["libNCo"] = mm.courtyards(buildings, buildings_q1, buffer=.25)
     buildings["ldbPWL"] = mm.perimeter_wall(buildings, buildings_q1, buffer=.25)
+
+    connected_buildings = buildings.geometry.groupby(buildings_q1.component_labels).apply( lambda x: unary_union(x.values))
+    connected_buildings = connected_buildings.set_crs(epsg=3035).buffer(.1).normalize().make_valid()
+    comps = buildings_q1.component_labels
+    
+    cardinalities = comps.value_counts()
+    lens = connected_buildings.length
+    areas = connected_buildings.area
+    elos = mm.elongation(connected_buildings)
+    eris = mm.equivalent_rectangular_index(connected_buildings)
+    ccos = mm.circular_compactness(connected_buildings)
+    lals = mm.longest_axis_length(connected_buildings)
+
+    buildings.loc[comps.index.values, 'mibCou'] = cardinalities.loc[comps.values].values
+    buildings.loc[comps.index.values, 'mibLen'] = lens.loc[comps.values].values
+    buildings.loc[comps.index.values, 'mibAre'] = areas.loc[comps.values].values
+
+    buildings.loc[comps.index.values, 'mibElo'] = elos.loc[comps.values].values
+    buildings.loc[comps.index.values, 'mibERI'] = eris.loc[comps.values].values
+    buildings.loc[comps.index.values, 'mibCCo'] = ccos.loc[comps.values].values
+    buildings.loc[comps.index.values, 'mibLAL'] = lals.loc[comps.values].values
+    
+    del connected_buildings
 
     ## building tessellation interactions
 
@@ -512,5 +537,5 @@ def process_tessellation_chars(
 
 
 if __name__ == "__main__":
-    process_regions(False)
+    # process_regions(False)
     process_regions(True)
