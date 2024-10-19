@@ -36,6 +36,11 @@ def process_single_region_buildings(region_id):
     print("----", "Processing region: ", region_id, datetime.datetime.now())
     buildings = gpd.read_parquet(regions_buildings_dir + f'buildings_{region_id}.pq')
     buildings = process_region_buildings(buildings, True, simplification_tolerance=.1, merge_limit=25)
+
+    ## drop buildings that intersect streets
+    if region_id in [55763, 16242]:
+        buildings = drop_buildings_intersecting_streets(buildings, region_id)
+    
     buildings.to_parquet(buildings_dir + f"buildings_{region_id}.parquet")
 
 
@@ -59,6 +64,10 @@ def process_region_buildings(buildings, simplify, simplification_tolerance=.1, m
     ## one region - 109491 - has an issue with simplification, without normalisation
     if simplify:
         buildings["geometry"] = buildings.simplify(simplification_tolerance).normalize()
+
+    # drop very large buildings
+    buildings = buildings[buildings.area < 200_000].reset_index(drop=True)
+
     
     ## merge buildings that overlap either 1) at least .10 percent or are smaller than 30m^2
     buildings = geoplanar.merge_overlaps(
@@ -101,6 +110,8 @@ def process_region_buildings(buildings, simplify, simplification_tolerance=.1, m
         1 - (buildings.shape[0] / initial_shape[0]),
     )
 
+    
+
     buildings["geometry"] = buildings.normalize()
     return buildings
 
@@ -127,6 +138,43 @@ def read_region_buildings(typed_dict, region_ids, region_hull, region_id):
     buildings = res
 
     return buildings
+
+
+
+def drop_buildings_intersecting_streets(buildings, region_id):
+    
+    from core.generate_streets import to_drop_tunnel
+    streets = gpd.read_parquet('/data/uscuni-ulce/overture_streets/streets_55763.pq')
+        
+    ## service road removed
+    approved_roads = ['living_street',
+                     'motorway',
+                     'motorway_link',
+                     'pedestrian',
+                     'primary',
+                     'primary_link',
+                     'residential',
+                     'secondary',
+                     'secondary_link',
+                     'tertiary',
+                     'tertiary_link',
+                     'trunk',
+                     'trunk_link',
+                     'unclassified']
+    streets = streets[streets['class'].isin(approved_roads)]
+    
+    
+    ## drop tunnels
+    to_filter = streets.loc[~streets.road_flags.isna(), ].set_crs(epsg=4236).to_crs(epsg=3035)
+    tunnels_to_drop = to_filter.apply(to_drop_tunnel, axis=1)
+    streets = streets.drop(to_filter[tunnels_to_drop].index)
+    
+    streets = streets.set_crs(epsg=4326).to_crs(epsg=3035)
+    streets = streets.sort_values('id')[['id', 'geometry', 'class']].reset_index(drop=True)
+    blg_idxs, str_idxs = streets.buffer(.3).sindex.query(buildings.geometry.to_crs(epsg=3035),
+                                              predicate='intersects')
+    return buildings[~buildings.index.isin(blg_idxs)].reset_index(drop=True)
+    
 
 
 if __name__ == "__main__":

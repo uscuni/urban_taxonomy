@@ -368,6 +368,8 @@ def process_building_chars(
     eris = mm.equivalent_rectangular_index(connected_buildings)
     ccos = mm.circular_compactness(connected_buildings)
     lals = mm.longest_axis_length(connected_buildings)
+    fr = mm.facade_ratio(connected_buildings)
+    sco = mm.square_compactness(connected_buildings)
 
     buildings.loc[comps.index.values, 'mibCou'] = cardinalities.loc[comps.values].values
     buildings.loc[comps.index.values, 'mibLen'] = lens.loc[comps.values].values
@@ -377,6 +379,9 @@ def process_building_chars(
     buildings.loc[comps.index.values, 'mibERI'] = eris.loc[comps.values].values
     buildings.loc[comps.index.values, 'mibCCo'] = ccos.loc[comps.values].values
     buildings.loc[comps.index.values, 'mibLAL'] = lals.loc[comps.values].values
+
+    buildings.loc[comps.index.values, 'mibFR'] = fr.loc[comps.values].values
+    buildings.loc[comps.index.values, 'mibSCo'] = fr.loc[comps.values].values
     
     del connected_buildings
 

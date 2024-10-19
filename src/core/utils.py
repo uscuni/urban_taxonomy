@@ -274,6 +274,8 @@ used_keys = {
     "mibERI": "connected buildings equivalent rectangle index",
     "mibCCo": "connected buildings circular compactness",
     "mibLAL": "connected buildings longest axis length",
+    "mibFR": "connected buildings facade ratio",
+    "mibSCo": "connected buildings square compactness",
 }
 
 char_units = {
