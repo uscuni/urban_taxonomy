@@ -199,7 +199,7 @@ def process_single_region_morphotopes(region_id):
 
 
     ### clustering parameters
-    min_cluster_size = 100
+    min_cluster_size = 75
     
     # spatial_lag = 3
     # kernel='gaussian' 
@@ -268,7 +268,7 @@ def process_regions(largest):
             
     else:
         # region_hulls = region_hulls[~region_hulls.index.isin(largest_regions)]
-        region_hulls = region_hulls[region_hulls.index == 69333]
+        # region_hulls = region_hulls[region_hulls.index == 69333]
         from joblib import Parallel, delayed
         n_jobs = -1
         new = Parallel(n_jobs=n_jobs)(

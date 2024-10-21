@@ -44,6 +44,35 @@ def process_all_regions_elements():
         gc.collect()
 
 
+def process_all_regions_elements_parallel():
+    from joblib import Parallel, delayed
+    region_hulls = gpd.read_parquet(
+            regions_datadir + "regions/" + "cadastre_regions_hull.parquet"
+    )
+
+    processed_region_ids = [int(s.split('.')[0].split('_')[-1])for s in glob.glob(tessellations_dir + '*')]
+    region_hulls = region_hulls[~region_hulls.index.isin(processed_region_ids)]
+
+    n_jobs = -1
+    new = Parallel(n_jobs=n_jobs)(
+        delayed(process_single_region_elements)(region_id) for region_id, _ in region_hulls.iterrows()
+    )
+
+def process_single_region_elements(region_id):
+    enclosures, tesselations = process_region_elements(buildings_dir, streets_dir, region_id)
+    
+    enclosures.to_parquet(enclosures_dir + f"enclosure_{region_id}.parquet")
+    print("Processed enclosures")
+    
+    ## save files
+    tesselations.to_parquet(
+        tessellations_dir + f"tessellation_{region_id}.parquet"
+    )
+    print("processed tesselations")
+
+
+
+
 def process_region_elements(buildings_data_dir, streets_data_dir, region_id):
     n_workers = -1
 
@@ -93,7 +122,7 @@ def process_region_elements(buildings_data_dir, streets_data_dir, region_id):
         )
         ## assume all missing buildings are problematic polygons, drop them and retry the tessellation
         num_problem_buildings += (~tesselation_coverage).sum()
-        buildings = buildings[tesselation_coverage].reset_index()
+        buildings = buildings[tesselation_coverage].reset_index(drop=True)
         enclosures = generate_enclosures_representative_points(buildings, streets)
         tesselations = generate_tess(buildings, enclosures, n_workers=-1)
         tesselation_coverage = np.isin(
@@ -169,4 +198,5 @@ def generate_enclosures_representative_points(buildings, streets):
 
 
 if __name__ == "__main__":
-    process_all_regions_elements()
+    # process_all_regions_elements()
+    process_all_regions_elements_parallel()

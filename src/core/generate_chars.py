@@ -542,5 +542,5 @@ def process_tessellation_chars(
 
 
 if __name__ == "__main__":
-    # process_regions(False)
+    process_regions(False)
     process_regions(True)
