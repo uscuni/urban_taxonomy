@@ -142,6 +142,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/jsonschema-specifications-2023.12.1-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/jsonschema-with-format-nongpl-4.23.0-hd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/jupyter-lsp-2.2.5-pyhd8ed1ab_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/jupyter-scatter-0.19.1-pyh80e38bb_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/jupyter_client-8.6.2-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/jupyter_core-5.7.2-py312h7900ff3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/jupyter_events-0.10.0-pyhd8ed1ab_0.conda
@@ -301,6 +302,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/param-1.13.0-pyh1a96a4e_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/parso-0.8.4-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/partd-1.4.2-pyhd8ed1ab_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/patsy-0.5.6-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/pcre2-10.44-hba22ea6_2.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/pexpect-4.9.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/pickleshare-0.7.5-py_1003.tar.bz2
@@ -359,6 +361,8 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/scikit-image-0.24.0-py312h1df14c2_2.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/scikit-learn-1.5.1-py312h775a589_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/scipy-1.14.1-py312h7d485d2_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/seaborn-0.13.2-hd8ed1ab_2.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/seaborn-base-0.13.2-pyhd8ed1ab_2.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/send2trash-1.8.3-pyh0d859eb_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/setuptools-73.0.1-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/shapely-2.0.6-py312h6cab151_1.conda
@@ -371,6 +375,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/spdlog-1.14.1-hed91bc2_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/sqlite-3.46.1-h9eae976_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/stack_data-0.6.2-pyhd8ed1ab_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/statsmodels-0.14.4-py312hc0a28a1_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/svt-av1-2.2.1-h5888daf_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/tbb-2021.13.0-h84d6215_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/tblib-3.0.0-pyhd8ed1ab_0.conda
@@ -385,6 +390,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/tornado-6.4.1-py312h66e93f0_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/tqdm-4.66.5-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/traitlets-5.14.3-pyhd8ed1ab_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/traittypes-0.2.1-pyh9f0ad1d_2.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/noarch/types-python-dateutil-2.9.0.20240906-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/typing-extensions-4.12.2-hd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/typing_extensions-4.12.2-pyha770c72_0.conda
@@ -1587,7 +1593,7 @@ packages:
   name: core
   version: 0.1.0
   path: .
-  sha256: fb2f605a768931443da63d36bef1d64d7b8a6ef3f5e9d34353736c751cdca238
+  sha256: 055a74d48706d7fe7195dc16c2d33d6644604a81bc5c942e51ba02c257ba313b
   requires_python: '>=3.12.4'
   editable: true
 - kind: conda
@@ -3112,6 +3118,33 @@ packages:
   - pkg:pypi/jupyter-lsp?source=hash-mapping
   size: 55539
   timestamp: 1712707521811
+- kind: conda
+  name: jupyter-scatter
+  version: 0.19.1
+  build: pyh80e38bb_0
+  subdir: noarch
+  noarch: python
+  url: https://conda.anaconda.org/conda-forge/noarch/jupyter-scatter-0.19.1-pyh80e38bb_0.conda
+  sha256: a81821717f9a36e5f8f79061f2dc10e5fee6f24b3b7871b66c0ea647a8194cf7
+  md5: d6208ec74681d511853e68142b8465d0
+  depends:
+  - anywidget >=0.9.0
+  - ipython
+  - ipywidgets >=7.6,<9
+  - matplotlib-base
+  - numpy
+  - pandas
+  - python >=3.8
+  - scipy
+  - seaborn
+  - traittypes >=0.2.1
+  - typing-extensions
+  license: Apache-2.0
+  license_family: APACHE
+  purls:
+  - pkg:pypi/jupyter-scatter?source=hash-mapping
+  size: 179476
+  timestamp: 1727704010482
 - kind: conda
   name: jupyter_client
   version: 8.6.2
@@ -6314,6 +6347,25 @@ packages:
   size: 20884
   timestamp: 1715026639309
 - kind: conda
+  name: patsy
+  version: 0.5.6
+  build: pyhd8ed1ab_0
+  subdir: noarch
+  noarch: python
+  url: https://conda.anaconda.org/conda-forge/noarch/patsy-0.5.6-pyhd8ed1ab_0.conda
+  sha256: 35ad5cab1d9c08cf98576044bf28f75e62f8492afe6d1a89c94bbe93dc8d7258
+  md5: a5b55d1cb110cdcedc748b5c3e16e687
+  depends:
+  - numpy >=1.4.0
+  - python >=3.6
+  - six
+  license: BSD-2-Clause AND PSF-2.0
+  license_family: BSD
+  purls:
+  - pkg:pypi/patsy?source=hash-mapping
+  size: 187218
+  timestamp: 1704469432353
+- kind: conda
   name: pcre2
   version: '10.44'
   build: hba22ea6_2
@@ -7543,6 +7595,48 @@ packages:
   size: 17700161
   timestamp: 1724328333870
 - kind: conda
+  name: seaborn
+  version: 0.13.2
+  build: hd8ed1ab_2
+  build_number: 2
+  subdir: noarch
+  noarch: python
+  url: https://conda.anaconda.org/conda-forge/noarch/seaborn-0.13.2-hd8ed1ab_2.conda
+  sha256: 79943fbbf1fafbf969257989a7d88638c0c3e7b89a81a75c9347c28768dd6141
+  md5: a79d8797f62715255308d92d3a91ef2e
+  depends:
+  - seaborn-base 0.13.2 pyhd8ed1ab_2
+  - statsmodels >=0.12
+  license: BSD-3-Clause
+  license_family: BSD
+  purls: []
+  size: 6996
+  timestamp: 1714494772218
+- kind: conda
+  name: seaborn-base
+  version: 0.13.2
+  build: pyhd8ed1ab_2
+  build_number: 2
+  subdir: noarch
+  noarch: python
+  url: https://conda.anaconda.org/conda-forge/noarch/seaborn-base-0.13.2-pyhd8ed1ab_2.conda
+  sha256: 5de8b9e88a0f2daf58b07e3f144da26f894e9a20071304fa37329664eb2a29a7
+  md5: b713b116feaf98acdba93ad4d7f90ca1
+  depends:
+  - matplotlib-base >=3.4,!=3.6.1
+  - numpy >=1.20,!=1.24.0
+  - pandas >=1.2
+  - python >=3.8
+  - scipy >=1.7
+  constrains:
+  - seaborn =0.13.2=*_2
+  license: BSD-3-Clause
+  license_family: BSD
+  purls:
+  - pkg:pypi/seaborn?source=hash-mapping
+  size: 234550
+  timestamp: 1714494767378
+- kind: conda
   name: send2trash
   version: 1.8.3
   build: pyh0d859eb_0
@@ -7762,6 +7856,31 @@ packages:
   - pkg:pypi/stack-data?source=hash-mapping
   size: 26205
   timestamp: 1669632203115
+- kind: conda
+  name: statsmodels
+  version: 0.14.4
+  build: py312hc0a28a1_0
+  subdir: linux-64
+  url: https://conda.anaconda.org/conda-forge/linux-64/statsmodels-0.14.4-py312hc0a28a1_0.conda
+  sha256: 6cc65ba902b32207e8a697b0e0408a28d6cc166be04f1882c40739a86a253d22
+  md5: 97dc960f3d9911964d73c2cf240baea5
+  depends:
+  - __glibc >=2.17,<3.0.a0
+  - libgcc >=13
+  - numpy <3,>=1.22.3
+  - numpy >=1.19,<3
+  - packaging >=21.3
+  - pandas !=2.1.0,>=1.4
+  - patsy >=0.5.6
+  - python >=3.12,<3.13.0a0
+  - python_abi 3.12.* *_cp312
+  - scipy !=1.9.2,>=1.8
+  license: BSD-3-Clause
+  license_family: BSD
+  purls:
+  - pkg:pypi/statsmodels?source=hash-mapping
+  size: 12103203
+  timestamp: 1727987129263
 - kind: conda
   name: svt-av1
   version: 2.2.1
@@ -8032,6 +8151,25 @@ packages:
   - pkg:pypi/traitlets?source=hash-mapping
   size: 110187
   timestamp: 1713535244513
+- kind: conda
+  name: traittypes
+  version: 0.2.1
+  build: pyh9f0ad1d_2
+  build_number: 2
+  subdir: noarch
+  noarch: python
+  url: https://conda.anaconda.org/conda-forge/noarch/traittypes-0.2.1-pyh9f0ad1d_2.tar.bz2
+  sha256: 7025cbf881fcb0c872209da619e89a5facc4d428f2f04f6690bef481a8d10710
+  md5: 7d32ccb5334a6822c28af3e864550618
+  depends:
+  - python
+  - traitlets >=4.2.2
+  license: BSD-3-Clause
+  license_family: BSD
+  purls:
+  - pkg:pypi/traittypes?source=hash-mapping
+  size: 10119
+  timestamp: 1600843475481
 - kind: conda
   name: types-python-dateutil
   version: 2.9.0.20240906
