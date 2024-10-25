@@ -13,6 +13,13 @@ Data product
 
 4. To run jupyter use either `pixi run jupyter lab` or pass extra arguments like `pixi run jupyter lab --port 8888`.
 
-5. Run the process_regions.ipynb notebook to generate all elements, graph and characters for a particular region.
+5. To run the analysis on the whole dataset - first, make sure you have the correct folder structure in place. Then, run:
 
-6. Run the clustering.ipynb notebook to generate and store clusters.
+    - `code/download_buildings.ipynb` to download all the cadastre data for central europe
+    - `code/explore_cadastre_data.ipynb` to standardise all the cadstre data from different countries into a single format
+    - `code/generate_regions.ipynb` to split the buildings into regions for independent processing
+    - `code/download_streets.ipynb` to download the raw overture streets for every region
+    - `bash full_run.sh` to run the entire processing pipeline from building, street preprocessing, element generation, characters calculations and morphotope creation.
+    - `code/region_ward_clustering.ipynb` to generate the heirarchy of morphotopes.
+
+6. (optional) to run the analysis on individual regions use - `code/process_region.ipynb` and `code/region_clustering.ipynb` notebooks.
