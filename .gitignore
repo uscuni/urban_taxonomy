@@ -145,3 +145,4 @@ data/.pixi/
 manual_deps/
 .pixi/
 data/
+*_log.txt

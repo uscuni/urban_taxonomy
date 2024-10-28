@@ -8,16 +8,14 @@ import pandas as pd
 from libpysal.graph import read_parquet
 from sklearn.preprocessing import PowerTransformer, RobustScaler, StandardScaler
 from scipy import stats
+import shapely
 
 from sklearn.neighbors import KDTree
-
 from sklearn.cluster import AgglomerativeClustering
 from scipy.cluster.hierarchy import dendrogram
 from scipy.cluster.hierarchy import fcluster
 from sklearn.metrics import adjusted_rand_score
 from sklearn.metrics import davies_bouldin_score
-from core.cluster_validation import get_linkage_matrix
-
 from fast_hdbscan.cluster_trees import (
     cluster_tree_from_condensed_tree,
     condense_tree,
@@ -27,8 +25,18 @@ from fast_hdbscan.cluster_trees import (
     mst_to_linkage_tree,
 )
 from fast_hdbscan.numba_kdtree import kdtree_to_numba
-from sklearn.neighbors import KDTree
+import datetime
+from core.cluster_validation import get_linkage_matrix
+from core.generate_context import spatially_weighted_partial_lag
 
+
+tessellations_dir = '/data/uscuni-ulce/processed_data/tessellations/'
+chars_dir = "/data/uscuni-ulce/processed_data/chars/"
+graph_dir = "/data/uscuni-ulce/processed_data/neigh_graphs/"
+morphotopes_dir = '/data/uscuni-ulce/processed_data/morphotopes/'
+regions_datadir = "/data/uscuni-ulce/"
+
+from core.utils import largest_regions
 
 def preprocess_clustering_data(X_train, clip, to_drop):
     '''Data pre-processing before clustering is carried out.'''
@@ -93,7 +101,7 @@ def post_process_clusters(component_buildings_data, component_graph, component_c
     return component_clusters
 
 
-def get_clusters(linkage_matrix, min_cluster_size, eom_clusters=True):
+def get_clusters(linkage_matrix, min_cluster_size, n_samples, eom_clusters=True):
     '''Extract hdbscan cluster types from a linkage matrix.'''
     condensed_tree = condense_tree(linkage_matrix, 
                                min_cluster_size=min_cluster_size)
@@ -108,11 +116,12 @@ def get_clusters(linkage_matrix, min_cluster_size, eom_clusters=True):
         selected_clusters = extract_leaves(
                 condensed_tree, allow_single_cluster=False
             )
-    return get_cluster_label_vector(condensed_tree, selected_clusters, 0)
+    
+    return get_cluster_label_vector(condensed_tree, selected_clusters, 0, n_samples)
 
 
 
-def cluster_data(X_train, graph, to_drop, clip, min_cluster_size, linkage, metric):
+def cluster_data(X_train, graph, to_drop, clip, min_cluster_size, linkage, metric, eom_clusters=True):
     '''Split the input data into connected components and carry out an agglomerative clustering for each component independently.
     Pre-process the input data, cluster and then carry out post-processing and finally combine all the seperate clusterings into one set of clusters.'''
     
@@ -125,7 +134,7 @@ def cluster_data(X_train, graph, to_drop, clip, min_cluster_size, linkage, metri
     for label, group in labels.groupby(labels):
     
         if group.shape[0] <= min_cluster_size:
-            component_clusters = np.ones(group.shape[0])
+            component_clusters = np.full(group.shape[0], -1)
     
         else:
             component_buildings_data = preprocess_clustering_data(X_train.loc[group.index.values], clip=clip, to_drop=to_drop)
@@ -142,16 +151,15 @@ def cluster_data(X_train, graph, to_drop, clip, min_cluster_size, linkage, metri
             # check if ward tree distances are always increasing
             assert (ward_tree[1:, 2] >= ward_tree[0:-1, 2]).all()
             
-            component_clusters = get_clusters(ward_tree, min_cluster_size, eom_clusters=True)
+            component_clusters = get_clusters(ward_tree, min_cluster_size, component_buildings_data.shape[0], eom_clusters=eom_clusters)
                 
-            component_clusters = post_process_clusters(component_buildings_data, component_graph, component_clusters)
+            # component_clusters = post_process_clusters(component_buildings_data, component_graph, component_clusters)
             
-            for c in np.unique(component_clusters):
-                # if c == -1: continue
-                cluster_graph = component_graph.subgraph(group.index[component_clusters == c].values)
-                assert cluster_graph.n_components == 1
+            # for c in np.unique(component_clusters):
+            #     # if c == -1: continue
+            #     cluster_graph = component_graph.subgraph(group.index[component_clusters == c].values)
+            #     assert cluster_graph.n_components == 1
         
-            # if label ==3: break
         results[label] = component_clusters
 
     ### relabel local clusters(0,1,2,0,1) to regional clusters(0_0,0_1,0_2, 0_0,0_1,) etc
@@ -167,3 +175,106 @@ def cluster_data(X_train, graph, to_drop, clip, min_cluster_size, linkage, metri
     assert (X_train[X_train.index >= 0].index == region_cluster_labels.index).all()
     
     return region_cluster_labels
+
+
+
+def percentile(n):
+    def percentile_(x):
+        return np.percentile(x, n)
+    percentile_.__name__ = 'percentile_%s' % n
+    return percentile_
+    
+
+def process_single_region_morphotopes(region_id):
+
+    print(datetime.datetime.now(), "----Processing ------", region_id)
+    X_train = pd.read_parquet(chars_dir + f'primary_chars_{region_id}.parquet')
+    graph = read_parquet(graph_dir + f"tessellation_graph_{region_id}.parquet")
+    tessellation = gpd.read_parquet(
+            tessellations_dir + f"tessellation_{region_id}.parquet"
+    )
+    
+    building_graph = graph.subgraph(graph.unique_ids[graph.unique_ids >= 0])
+    labels = building_graph.component_labels
+
+
+    ### clustering parameters
+    min_cluster_size = 75
+    
+    # spatial_lag = 3
+    # kernel='gaussian' 
+    # lag_type = '_median'
+
+    lag_type = None
+    spatial_lag = 0
+    kernel='None'
+
+    clip = None
+    to_drop = ['stcSAl','stbOri','stcOri','stbCeA', 
+               'ldkAre', 'ldkPer', 'lskCCo', 'lskERI',
+               'lskCWA', 'ltkOri', 'ltkWNB', 'likWBB', 'likWCe']
+    
+    linkage='ward'
+    metric='euclidean'
+    eom_clusters = False
+
+    print("--------Generating lag----------")
+    ## generate lag, filter and attack to data
+    
+    
+    if lag_type is not None:
+        centroids = shapely.get_coordinates(tessellation.representative_point())
+        lag = spatially_weighted_partial_lag(X_train, graph, centroids, kernel=kernel, k=spatial_lag, n_splits=10, bandwidth=-1)
+        lag = lag[[c for c in lag.columns if lag_type in c]]
+        clustering_data = X_train.join(lag, how='inner')
+    else:
+        clustering_data = X_train
+
+    print("--------Generating morphotopes----------")
+    # run morphotopes clustering
+    region_cluster_labels = cluster_data(clustering_data, graph, to_drop, clip, min_cluster_size, linkage, metric, eom_clusters=eom_clusters)
+    region_cluster_labels.to_frame('morphotope_label').to_parquet(morphotopes_dir + f'tessellation_labels_morphotopes_{region_id}_{min_cluster_size}_{spatial_lag}_{lag_type}_{kernel}_{eom_clusters}.pq')
+
+    ## generate morphotopes boundaries
+    # clrs_geometry = tessellation.loc[region_cluster_labels.index]
+    # clrs_geometry['label'] = region_cluster_labels.values
+    # clrs_geometry = clrs_geometry.dissolve('label').simplify(1).to_frame()
+    # clrs_geometry.columns = ['geometry']
+    # morph_clrs_geometry = clrs_geometry.set_geometry('geometry').reset_index()
+    # morph_clrs_geometry.to_parquet(morphotopes_dir + f'shapes_morphotopes_{region_id}_{min_cluster_size}_{spatial_lag}_{lag_type}_{kernel}.pq')
+
+    # generate morphotopes data
+    print("--------Generating morphotopes data----------")
+    component_data = X_train.loc[region_cluster_labels.index]
+    component_data = component_data.groupby(region_cluster_labels.values).agg([percentile(25), 
+                                                             'median', 
+                                                             percentile(75), 'std', 'mean'] )
+    # save sizes for clustering
+    component_data[('Size', 'Size')] = X_train.loc[region_cluster_labels.index].groupby(region_cluster_labels.values).size()
+
+    # store morphotopes data
+    component_data.to_parquet(morphotopes_dir + f'data_morphotopes_{region_id}_{min_cluster_size}_{spatial_lag}_{lag_type}_{kernel}_{eom_clusters}.pq')
+
+
+def process_regions(largest):
+
+    region_hulls = gpd.read_parquet(
+        regions_datadir + "regions/" + "cadastre_regions_hull.parquet"
+    )
+
+    if largest:
+        for region_id in largest_regions:
+            process_single_region_morphotopes(region_id)
+            
+    else:
+        # region_hulls = region_hulls[~region_hulls.index.isin(largest_regions)]
+        # region_hulls = region_hulls[region_hulls.index == 69333]
+        from joblib import Parallel, delayed
+        n_jobs = -1
+        new = Parallel(n_jobs=n_jobs)(
+            delayed(process_single_region_morphotopes)(region_id) for region_id, _ in region_hulls.iterrows()
+        )
+
+if __name__ == '__main__':
+    process_regions(largest=False)
+    # process_regions(largest=True)

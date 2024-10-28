@@ -5,41 +5,43 @@ import geopandas as gpd
 import geoplanar
 import numpy as np
 import pandas as pd
+from core.utils import largest_regions
 
 regions_datadir = "/data/uscuni-ulce/"
 data_dir = "/data/uscuni-ulce/processed_data/"
 eubucco_files = glob.glob(regions_datadir + "eubucco_raw/*")
+buildings_dir = '/data/uscuni-ulce/processed_data/simplified_buildings/'
+regions_buildings_dir = '/data/uscuni-ulce/regions/buildings/'
 
+def process_regions(largest):
 
-def process_all_regions_buildings():
-    building_region_mapping = pd.read_parquet(
-        regions_datadir + "regions/" + "id_to_region.parquet", engine="pyarrow"
-    )
-    typed_dict = pd.Series(
-        np.arange(building_region_mapping["id"].values.shape[0]),
-        index=building_region_mapping["id"].values,
-    )
-    region_ids = building_region_mapping.groupby("region")["id"].unique()
-    del building_region_mapping  # its 2/3 gb
     region_hulls = gpd.read_parquet(
-        regions_datadir + "regions/" + "regions_hull.parquet"
+        regions_datadir + "regions/" + "cadastre_regions_hull.parquet"
     )
 
-    for region_id, region_hull in region_hulls.iterrows():
-        region_hull = region_hull["convex_hull"]
-
-        if region_id != 69300: continue
-
-        print("----", "Processing region: ", region_id, datetime.datetime.now())
-        buildings = read_region_buildings(
-            typed_dict, region_ids, region_hull, region_id
+    if largest:
+        for region_id in largest_regions:
+            process_single_region_buildings(region_id)
+            
+    else:
+        regions_hulls = region_hulls[~region_hulls.index.isin(largest_regions)]
+        from joblib import Parallel, delayed
+        n_jobs = -1
+        new = Parallel(n_jobs=n_jobs)(
+            delayed(process_single_region_buildings)(region_id) for region_id, _ in regions_hulls.iterrows()
         )
 
-        buildings = process_region_buildings(buildings, True)
 
-        buildings.to_parquet(data_dir + f"buildings/buildings_{region_id}.parquet")
+def process_single_region_buildings(region_id):
+    print("----", "Processing region: ", region_id, datetime.datetime.now())
+    buildings = gpd.read_parquet(regions_buildings_dir + f'buildings_{region_id}.pq')
+    buildings = process_region_buildings(buildings, True, simplification_tolerance=.1, merge_limit=25)
 
-        del buildings
+    ## drop buildings that intersect streets
+    if region_id in [55763, 16242]:
+        buildings = drop_buildings_intersecting_streets(buildings, region_id)
+    
+    buildings.to_parquet(buildings_dir + f"buildings_{region_id}.parquet")
 
 
 def process_region_buildings(buildings, simplify, simplification_tolerance=.1, merge_limit=25):
@@ -59,9 +61,14 @@ def process_region_buildings(buildings, simplify, simplification_tolerance=.1, m
     )
 
     ## simplify geometry - most eubucco data has topological issues
+    ## one region - 109491 - has an issue with simplification, without normalisation
     if simplify:
-        buildings["geometry"] = buildings.simplify(simplification_tolerance)
+        buildings["geometry"] = buildings.simplify(simplification_tolerance).normalize()
 
+    # drop very large buildings
+    buildings = buildings[buildings.area < 200_000].reset_index(drop=True)
+
+    
     ## merge buildings that overlap either 1) at least .10 percent or are smaller than 30m^2
     buildings = geoplanar.merge_overlaps(
         buildings, merge_limit=merge_limit, overlap_limit=0.1
@@ -103,6 +110,8 @@ def process_region_buildings(buildings, simplify, simplification_tolerance=.1, m
         1 - (buildings.shape[0] / initial_shape[0]),
     )
 
+    
+
     buildings["geometry"] = buildings.normalize()
     return buildings
 
@@ -131,5 +140,43 @@ def read_region_buildings(typed_dict, region_ids, region_hull, region_id):
     return buildings
 
 
+
+def drop_buildings_intersecting_streets(buildings, region_id):
+    
+    from core.generate_streets import to_drop_tunnel
+    streets = gpd.read_parquet('/data/uscuni-ulce/overture_streets/streets_55763.pq')
+        
+    ## service road removed
+    approved_roads = ['living_street',
+                     'motorway',
+                     'motorway_link',
+                     'pedestrian',
+                     'primary',
+                     'primary_link',
+                     'residential',
+                     'secondary',
+                     'secondary_link',
+                     'tertiary',
+                     'tertiary_link',
+                     'trunk',
+                     'trunk_link',
+                     'unclassified']
+    streets = streets[streets['class'].isin(approved_roads)]
+    
+    
+    ## drop tunnels
+    to_filter = streets.loc[~streets.road_flags.isna(), ].set_crs(epsg=4236).to_crs(epsg=3035)
+    tunnels_to_drop = to_filter.apply(to_drop_tunnel, axis=1)
+    streets = streets.drop(to_filter[tunnels_to_drop].index)
+    
+    streets = streets.set_crs(epsg=4326).to_crs(epsg=3035)
+    streets = streets.sort_values('id')[['id', 'geometry', 'class']].reset_index(drop=True)
+    blg_idxs, str_idxs = streets.buffer(.3).sindex.query(buildings.geometry.to_crs(epsg=3035),
+                                              predicate='intersects')
+    return buildings[~buildings.index.isin(blg_idxs)].reset_index(drop=True)
+    
+
+
 if __name__ == "__main__":
-    process_regions()
+    process_regions(False)
+    process_regions(True)

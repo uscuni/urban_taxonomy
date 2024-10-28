@@ -18,55 +18,38 @@ import sgeop
 regions_datadir = "/data/uscuni-ulce/"
 data_dir = "/data/uscuni-ulce/processed_data/"
 eubucco_files = glob.glob(regions_datadir + "eubucco_raw/*")
+buildings_dir = '/data/uscuni-ulce/processed_data/buildings/'
+overture_streets_dir = '/data/uscuni-ulce/overture_streets/'
+streets_dir = '/data/uscuni-ulce/processed_data/streets/'
+from core.utils import largest_regions
 
+def process_regions(largest):
 
-def process_all_regions_streets():
     region_hulls = gpd.read_parquet(
-        regions_datadir + "regions/" + "regions_hull.parquet"
+        regions_datadir + "regions/" + "cadastre_regions_hull.parquet"
     )
 
-    for region_id, region_hull in region_hulls.to_crs('epsg:4326').iterrows():
-        region_hull = region_hull["convex_hull"]
-
-        if region_id != 69300: continue
-
-        print("----", "Processing region: ", region_id, datetime.datetime.now())
-
-        ## processs streets
-        streets = process_region_streets(region_hull, region_id)
-
-        ## save streets
-        streets.to_parquet(data_dir + f"streets/streets_{region_id}.parquet")
-        del streets
-        gc.collect()
+    if largest:
+        for region_id in largest_regions:
+            process_single_region_streets(region_id)
+            
+    else:
+        regions_hulls = region_hulls[~region_hulls.index.isin(largest_regions)]
+        from joblib import Parallel, delayed
+        n_jobs = -1
+        new = Parallel(n_jobs=n_jobs)(
+            delayed(process_single_region_streets)(region_id) for region_id, _ in regions_hulls.iterrows()
+        )
 
 
-def to_drop_tunnel(row):
-    '''Find whether or not a road segment has a tunnel thats more than 50 metres.'''
-    tunnel_length = row.geometry.length
-    flags = row.road_flags
-
-    total_tunnel_proportion = -1
-    for flag in flags:
-        if 'values' in flag and ('is_tunnel' in flag['values']) :
-            # between could be missing to show the whole thing is a tunnel
-            total_tunnel_proportion = 0.0 if total_tunnel_proportion < 0 else total_tunnel_proportion
-            # betweencould be None to indicate the whole thing is a tunnel 
-            if ('between' in flag) and (flag['between'] is not None):
-                s,e = flag['between'][0], flag['between'][1]
-                total_tunnel_proportion += (e - s)
-    
-    if (total_tunnel_proportion*tunnel_length) > 50:
-        return True
-    elif total_tunnel_proportion == 0.0:
-        return True
-    return False
-    
-
+def process_single_region_streets(region_id):
+    print("----", "Processing region: ", region_id, datetime.datetime.now())
+    streets = process_region_streets(region_id, overture_streets_dir, buildings_dir)
+    streets.to_parquet(streets_dir + f'streets_{region_id}.parquet')
 
 
 def process_region_streets(region_id, streets_dir, buildings_dir):
-    '''Filter streets them, drop tunnels and simplify.'''
+    '''Filter streets, then drop tunnels, and lastly - simplify.'''
     
     streets = gpd.read_parquet(streets_dir + f'streets_{region_id}.pq')
     
@@ -105,6 +88,29 @@ def process_region_streets(region_id, streets_dir, buildings_dir):
     )
     
     return simplified
+    
+
+def to_drop_tunnel(row):
+    '''Find whether or not a road segment has a tunnel thats more than 50 metres.'''
+    tunnel_length = row.geometry.length
+    flags = row.road_flags
+
+    total_tunnel_proportion = -1
+    for flag in flags:
+        if 'values' in flag and ('is_tunnel' in flag['values']) :
+            # between could be missing to show the whole thing is a tunnel
+            total_tunnel_proportion = 0.0 if total_tunnel_proportion < 0 else total_tunnel_proportion
+            # betweencould be None to indicate the whole thing is a tunnel 
+            if ('between' in flag) and (flag['between'] is not None):
+                s,e = flag['between'][0], flag['between'][1]
+                total_tunnel_proportion += (e - s)
+    
+    if (total_tunnel_proportion*tunnel_length) > 50:
+        return True
+    elif total_tunnel_proportion == 0.0:
+        return True
+    return False
+
 
 def read_overture_region_streets(region_hull, region_id):
     '''Download overture streets within the region_hull.'''
@@ -223,4 +229,5 @@ def read_region_streets(region_hull, region_id):
     return streets
 
 if __name__ == "__main__":
-    process_all_regions_streets()
+    process_regions(False)
+    process_regions(True)

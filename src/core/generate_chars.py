@@ -8,47 +8,48 @@ import numpy as np
 import pandas as pd
 from libpysal.graph import read_parquet
 from core.utils import partial_apply, partial_describe_reached_agg, partial_mean_intb_dist
+from core.utils import largest_regions
+from shapely import unary_union
 
-def process_regions():
+regions_datadir = "/data/uscuni-ulce/"
+regions_buildings_dir = '/data/uscuni-ulce/regions/buildings/'
+buildings_dir = '/data/uscuni-ulce/processed_data/buildings/'
+overture_streets_dir = '/data/uscuni-ulce/overture_streets/'
+streets_dir = '/data/uscuni-ulce/processed_data/streets/'
+enclosures_dir = '/data/uscuni-ulce/processed_data/enclosures/'
+tessellations_dir = '/data/uscuni-ulce/processed_data/tessellations/'
+graph_dir = '/data/uscuni-ulce/processed_data/neigh_graphs/'
+chars_dir = '/data/uscuni-ulce/processed_data/chars/'
+
+def process_regions(largest):
+    
     region_hulls = gpd.read_parquet(
-        regions_datadir + "regions/" + "regions_hull.parquet"
+        regions_datadir + "regions/" + "cadastre_regions_hull.parquet"
     )
-    # 69300 - prague
-    # 12199 - small test
-    # large regions = [4, 226, 3607, 8754, 16501, 55713, 62929, 107685, 115457]
-
-    # for region_id, region_hull in region_hulls.iterrows():
-    for region_id in reversed([69300]):
-        print(datetime.datetime.now(), "----Processing ------", region_id)
-
-        process_street_chars(region_id)
-        gc.collect()
-
-        process_enclosure_chars(region_id)
-        gc.collect()
-
-        process_building_chars(region_id)
-        gc.collect()
-
-        process_tessellation_chars(region_id)
-        gc.collect()
-
-
-def run_parallel_regions():
-    building_region_mapping = pd.read_parquet(
-        regions_datadir + "regions/" + "id_to_region.parquet", engine="pyarrow"
-    )
-    counts = building_region_mapping.groupby("region")["id"].size()
-    del building_region_mapping
-    gc.collect()
-    parallel_regions = counts[counts < 6e5].index.values
-
-    from joblib import Parallel, delayed
-
-    n_jobs = -1
-    new = Parallel(n_jobs=n_jobs)(
-        delayed(process_single_region_chars)(region_id) for region_id in parallel_regions
-    )
+        
+    if largest:
+        for region_id in largest_regions:
+            process_single_region_chars(    region_id,
+                                                    graph_dir,
+                                                    buildings_dir,
+                                                    streets_dir,
+                                                    enclosures_dir,
+                                                    tessellations_dir,
+                                                    chars_dir)
+            
+    else:
+        regions_hulls = region_hulls[~region_hulls.index.isin(largest_regions)]
+        from joblib import Parallel, delayed
+        n_jobs = -1
+        new = Parallel(n_jobs=n_jobs)(
+            delayed(process_single_region_chars)(    region_id,
+                                                    graph_dir,
+                                                    buildings_dir,
+                                                    streets_dir,
+                                                    enclosures_dir,
+                                                    tessellations_dir,
+                                                    chars_dir) for region_id, _ in regions_hulls.iterrows()
+                                                        )
 
 
 def process_single_region_chars(
@@ -154,7 +155,7 @@ def process_street_chars(
     street_orientation = mm.orientation(edges)
     edges["sssLin"] = mm.linearity(edges)
 
-    str_q1 = read_parquet(graph_dir + f"street_graph_{region_id}_knn1.parquet")
+    str_q1 = read_parquet(graph_dir + f"street_graph_{region_id}.parquet")
 
     def mean_edge_length(partical_focals, partial_higher, y):
         return partial_higher.describe(
@@ -216,7 +217,7 @@ def process_street_chars(
     edges["sdsSWD"] = profile["width_deviation"]
 
     ## nodes tessellation interactions
-    nodes_graph = read_parquet(graph_dir + f"nodes_graph_{region_id}_knn1.parquet")
+    nodes_graph = read_parquet(graph_dir + f"nodes_graph_{region_id}.parquet")
 
     edges["nID"] = edges.index.values
     tessellation["nID"] = tess_nid
@@ -276,7 +277,7 @@ def process_enclosure_chars(
     enclosures["lskCWA"] = mm.compactness_weighted_axis(enclosures)
     enclosures["ltkOri"] = mm.orientation(enclosures)
 
-    blo_q1 = read_parquet(graph_dir + f"enclosure_graph_{region_id}_knn1.parquet")
+    blo_q1 = read_parquet(graph_dir + f"enclosure_graph_{region_id}.parquet")
     enclosures["ltkWNB"] = mm.neighbors(enclosures, blo_q1, weighted=True)
 
 
@@ -351,13 +352,42 @@ def process_building_chars(
             mm.shared_walls(buildings.set_precision(1e-6), strict=False, tolerance=.15) / buildings.geometry.length
         )
 
-    buildings_q1 = read_parquet(graph_dir + f"building_graph_{region_id}_knn1.parquet")
+    ### add the connected structure characters
+    buildings_q1 = read_parquet(graph_dir + f"building_graph_{region_id}.parquet")
     buildings["libNCo"] = mm.courtyards(buildings, buildings_q1, buffer=.25)
     buildings["ldbPWL"] = mm.perimeter_wall(buildings, buildings_q1, buffer=.25)
 
+    connected_buildings = buildings.geometry.groupby(buildings_q1.component_labels).apply( lambda x: unary_union(x.values))
+    connected_buildings = connected_buildings.set_crs(epsg=3035).buffer(.1).normalize().make_valid()
+    comps = buildings_q1.component_labels
+    
+    cardinalities = comps.value_counts()
+    lens = connected_buildings.length
+    areas = connected_buildings.area
+    elos = mm.elongation(connected_buildings)
+    eris = mm.equivalent_rectangular_index(connected_buildings)
+    ccos = mm.circular_compactness(connected_buildings)
+    lals = mm.longest_axis_length(connected_buildings)
+    fr = mm.facade_ratio(connected_buildings)
+    sco = mm.square_compactness(connected_buildings)
+
+    buildings.loc[comps.index.values, 'mibCou'] = cardinalities.loc[comps.values].values
+    buildings.loc[comps.index.values, 'mibLen'] = lens.loc[comps.values].values
+    buildings.loc[comps.index.values, 'mibAre'] = areas.loc[comps.values].values
+
+    buildings.loc[comps.index.values, 'mibElo'] = elos.loc[comps.values].values
+    buildings.loc[comps.index.values, 'mibERI'] = eris.loc[comps.values].values
+    buildings.loc[comps.index.values, 'mibCCo'] = ccos.loc[comps.values].values
+    buildings.loc[comps.index.values, 'mibLAL'] = lals.loc[comps.values].values
+
+    buildings.loc[comps.index.values, 'mibFR'] = fr.loc[comps.values].values
+    buildings.loc[comps.index.values, 'mibSCo'] = fr.loc[comps.values].values
+    
+    del connected_buildings
+
     ## building tessellation interactions
 
-    queen_1 = read_parquet(graph_dir + f"tessellation_graph_{region_id}_knn1.parquet")
+    queen_1 = read_parquet(graph_dir + f"tessellation_graph_{region_id}.parquet")
     bgraph = queen_1.subgraph(buildings_q1.unique_ids)
 
     buildings["ltcBuA"] = mm.building_adjacency(buildings_q1, bgraph)
@@ -438,7 +468,7 @@ def process_tessellation_chars(
     tessellation["sscCCo"] = mm.circular_compactness(tessellation)
     tessellation["sscERI"] = mm.equivalent_rectangular_index(tessellation.geometry)
 
-    queen_1 = read_parquet(graph_dir + f"tessellation_graph_{region_id}_knn1.parquet")
+    queen_1 = read_parquet(graph_dir + f"tessellation_graph_{region_id}.parquet")
     tessellation["mtcWNe"] = mm.neighbors(tessellation, queen_1, weighted=True)
     tessellation["mdcAre"] = queen_1.describe(
         tessellation.geometry.area, statistics=["sum"]
@@ -512,4 +542,5 @@ def process_tessellation_chars(
 
 
 if __name__ == "__main__":
-    process_regions()
+    process_regions(False)
+    process_regions(True)

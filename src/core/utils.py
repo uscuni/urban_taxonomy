@@ -264,7 +264,18 @@ used_keys = {
     "ltkWNB": "perimeter-weighted neighbours of enclosure",
     "likWBB": "total of building areas within the enclosure, normalised by enclosure area",
     "sdsAre": "area covered by edge-attached ETCs",
-    "likWCe": "area-weighted ETCs of enclosure"
+    "likWCe": "area-weighted ETCs of enclosure",
+
+
+    "mibCou": "connected buildings count",
+    "mibAre": "connected buildings area",
+    "mibLen": "connected buildings count",
+    "mibElo": "connected buildings elongation",
+    "mibERI": "connected buildings equivalent rectangle index",
+    "mibCCo": "connected buildings circular compactness",
+    "mibLAL": "connected buildings longest axis length",
+    "mibFR": "connected buildings facade ratio",
+    "mibSCo": "connected buildings square compactness",
 }
 
 char_units = {
@@ -331,3 +342,8 @@ char_units = {
     "likWBB": "ratio",
     "sdsAre": "area-neigbourhood"
 }
+
+
+largest_regions = [     4, 107131,  16242,   4214,   8707,  51289, 114311,  55763,
+        14679,  62954,  10579,  38679,  86873,  34266,     10,  80404,
+        18557,  69333,   1154, 130658]

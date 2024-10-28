@@ -9,15 +9,22 @@ from libpysal.graph import Graph
 regions_datadir = "/data/uscuni-ulce/"
 data_dir = "/data/uscuni-ulce/processed_data/"
 eubucco_files = glob.glob(regions_datadir + "eubucco_raw/*")
-
+regions_buildings_dir = '/data/uscuni-ulce/regions/buildings/'
+buildings_dir = '/data/uscuni-ulce/processed_data/buildings/'
+overture_streets_dir = '/data/uscuni-ulce/overture_streets/'
+streets_dir = '/data/uscuni-ulce/processed_data/streets/'
+enclosures_dir = '/data/uscuni-ulce/processed_data/enclosures/'
+tessellations_dir = '/data/uscuni-ulce/processed_data/tessellations/'
+graph_dir = '/data/uscuni-ulce/processed_data/neigh_graphs/'
+chars_dir = '/data/uscuni-ulce/processed_data/chars/'
 
 def process_all_regions_graphs():
+    
     region_hulls = gpd.read_parquet(
-        regions_datadir + "regions/" + "regions_hull.parquet"
+        regions_datadir + "regions/" + "cadastre_regions_hull.parquet"
     )
+    
     for region_id, _ in region_hulls.iterrows():
-        if region_id != 69300:
-            continue
 
         print(
             datetime.datetime.now(),
@@ -25,7 +32,14 @@ def process_all_regions_graphs():
             region_id,
         )
 
-        process_region_graphs(region_id)
+        process_region_graphs(
+        region_id,
+        graph_dir,
+        buildings_dir,
+        streets_dir,
+        enclosures_dir,
+        tessellations_dir,
+        )
         
         gc.collect()
 
@@ -53,7 +67,7 @@ def process_tessellation_graph(region_id, graph_dir, tessellations_dir):
 
     graph = Graph.build_fuzzy_contiguity(tessellation, buffer=1e-6).assign_self_weight()
     graph.to_parquet(
-        graph_dir + f"tessellation_graph_{region_id}_knn1.parquet"
+        graph_dir + f"tessellation_graph_{region_id}.parquet"
     )
     print("Built tess graph knn=1")
 
@@ -69,7 +83,7 @@ def process_buildings_graph(region_id, graph_dir, buildings_dir):
     graph = Graph.build_fuzzy_contiguity(buildings, buffer=.25).assign_self_weight()
 
     graph.to_parquet(
-        graph_dir + f"building_graph_{region_id}_knn1.parquet"
+        graph_dir + f"building_graph_{region_id}.parquet"
     )
     print("Built buildings graph knn=1")
 
@@ -84,7 +98,7 @@ def process_edges_graph(region_id, graph_dir, streets_dir):
 
     graph = Graph.build_contiguity(streets, rook=False).assign_self_weight()
     graph.to_parquet(
-        graph_dir + f"street_graph_{region_id}_knn1.parquet"
+        graph_dir + f"street_graph_{region_id}.parquet"
     )
     print("Built streets graph knn=1")
 
@@ -99,7 +113,7 @@ def process_enclosure_graph(region_id, graph_dir, enclosures_dir):
 
     graph = Graph.build_contiguity(inputdf, rook=False).assign_self_weight()
     graph.to_parquet(
-        graph_dir + f"enclosure_graph_{region_id}_knn1.parquet"
+        graph_dir + f"enclosure_graph_{region_id}.parquet"
     )
     print("Built enclosure graph knn=1")
 
@@ -114,7 +128,7 @@ def process_nodes_graph(region_id, graph_dir, streets_dir):
 
     graph = Graph.from_W(w)
     graph.to_parquet(
-        graph_dir + f"nodes_graph_{region_id}_knn1.parquet"
+        graph_dir + f"nodes_graph_{region_id}.parquet"
     )
     print("Built nodes graph knn=1")
 

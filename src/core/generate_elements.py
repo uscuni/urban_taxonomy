@@ -6,34 +6,71 @@ import geopandas as gpd
 import momepy as mm
 import numpy as np
 from libpysal.graph import Graph
+from shapely import GEOSException
+from shapely import Point
+
+regions_buildings_dir = '/data/uscuni-ulce/regions/buildings/'
+buildings_dir = '/data/uscuni-ulce/processed_data/buildings/'
+overture_streets_dir = '/data/uscuni-ulce/overture_streets/'
+streets_dir = '/data/uscuni-ulce/processed_data/streets/'
+enclosures_dir = '/data/uscuni-ulce/processed_data/enclosures/'
+tessellations_dir = '/data/uscuni-ulce/processed_data/tessellations/'
+regions_datadir = '/data/uscuni-ulce/'
 
 
-def process_all_regions_elements(data_dir, regions_datadir):
+def process_all_regions_elements():
 
     region_hulls = gpd.read_parquet(
-        regions_datadir + "regions/" + "regions_hull.parquet"
+            regions_datadir + "regions/" + "cadastre_regions_hull.parquet"
     )
 
+    ## run one region at a time, since the inner function is parallelized
     for region_id, region_hull in region_hulls.iterrows():
-        region_hull = region_hull["convex_hull"]
 
-        if region_id != 69300:
-            continue
+        print("----", "Processing region: ", region_id, datetime.datetime.now())
+        enclosures, tesselations = process_region_elements(buildings_dir, streets_dir, region_id)
 
-        enclosures, tesselations = process_region_elements(region_id)
-
-        enclosures.to_parquet(data_dir + f"enclosures/enclosure_{region_id}.parquet")
+        enclosures.to_parquet(enclosures_dir + f"enclosure_{region_id}.parquet")
         print("Processed enclosures")
-        
+
         ## save files
         tesselations.to_parquet(
-            data_dir + f"tessellations/tessellation_{region_id}.parquet"
+            tessellations_dir + f"tessellation_{region_id}.parquet"
         )
         print("processed tesselations")
 
         del enclosures
         del tesselations
         gc.collect()
+
+
+def process_all_regions_elements_parallel():
+    from joblib import Parallel, delayed
+    region_hulls = gpd.read_parquet(
+            regions_datadir + "regions/" + "cadastre_regions_hull.parquet"
+    )
+
+    processed_region_ids = [int(s.split('.')[0].split('_')[-1])for s in glob.glob(tessellations_dir + '*')]
+    region_hulls = region_hulls[~region_hulls.index.isin(processed_region_ids)]
+
+    n_jobs = -1
+    new = Parallel(n_jobs=n_jobs)(
+        delayed(process_single_region_elements)(region_id) for region_id, _ in region_hulls.iterrows()
+    )
+
+def process_single_region_elements(region_id):
+    enclosures, tesselations = process_region_elements(buildings_dir, streets_dir, region_id)
+    
+    enclosures.to_parquet(enclosures_dir + f"enclosure_{region_id}.parquet")
+    print("Processed enclosures")
+    
+    ## save files
+    tesselations.to_parquet(
+        tessellations_dir + f"tessellation_{region_id}.parquet"
+    )
+    print("processed tesselations")
+
+
 
 
 def process_region_elements(buildings_data_dir, streets_data_dir, region_id):
@@ -45,7 +82,31 @@ def process_region_elements(buildings_data_dir, streets_data_dir, region_id):
     )
     streets = gpd.read_parquet(streets_data_dir + f"streets_{region_id}.parquet")
     enclosures = generate_enclosures_representative_points(buildings, streets)
-    tesselations = generate_tess(buildings, enclosures, n_workers=-1)
+
+
+    tesselations = None
+
+    ## we need a try/except block here because shapely.voronoi_polygons throws a top. exception
+    ## for some buildings and there is no way to filter them out before running it
+    ## there are only 2 buildings in the entire dataset that have the issue in regions - 47090,21894
+    try:
+    
+        tesselations = generate_tess(buildings,
+                             enclosures,
+                             n_workers=-1)
+    
+    except GEOSException as e:
+        txt = str(e)
+        print('Problem with topology, ', txt)
+        problem_point_coords = [float(s) for s in txt[45:].split('. T')[0].split(' ')]
+        problem_point = Point(*problem_point_coords)
+        problem_building = buildings.iloc[buildings.sindex.query(problem_point, predicate='intersects')]
+        buildings = buildings.drop(buildings.sindex.query(problem_point, predicate='intersects'))
+        tesselations = generate_tess(buildings,
+                             enclosures,
+                             n_workers=-1)
+
+
 
     ### there are some edge cases for long and narrow buildings and
     ## completely wrong polygons that are dropped by voronoi_frames
@@ -53,31 +114,36 @@ def process_region_elements(buildings_data_dir, streets_data_dir, region_id):
     tesselation_coverage = np.isin(
         buildings.index.values, tesselations.index.values
     )
-    if not tesselation_coverage.all():
+    num_problem_buildings = 0
+    
+    while (not tesselation_coverage.all()):
         print(
             "Retrying tesselation with less buildings, potentially changing building data."
         )
         ## assume all missing buildings are problematic polygons, drop them and retry the tessellation
-        num_problem_buildings = (~tesselation_coverage).sum()
-        buildings = buildings[tesselation_coverage].reset_index()
+        num_problem_buildings += (~tesselation_coverage).sum()
+        buildings = buildings[tesselation_coverage].reset_index(drop=True)
         enclosures = generate_enclosures_representative_points(buildings, streets)
         tesselations = generate_tess(buildings, enclosures, n_workers=-1)
         tesselation_coverage = np.isin(
             buildings.index.values, tesselations.index.values
         )
-        # if this results in a correct tesselation, save the new region buildings
-        if tesselation_coverage.all():
-            print(
-                "Dropping",
-                num_problem_buildings,
-                "buildings due to tesselation problems",
-            )
-            buildings.to_parquet(
-                buildings_data_dir + f"buildings_{region_id}.parquet"
-            )
 
     # quality check, there should be at least one tess cell per building in the end.
     assert tesselation_coverage.all()
+    
+    # if this results in a correct tesselation, save the new region buildings
+    if num_problem_buildings >= 1:
+        print(
+            "Dropping",
+            num_problem_buildings,
+            "buildings due to tesselation problems",
+        )
+        buildings.to_parquet(
+            buildings_data_dir + f"buildings_{region_id}.parquet"
+        )
+
+
 
     # free some memory
     del buildings
@@ -132,4 +198,5 @@ def generate_enclosures_representative_points(buildings, streets):
 
 
 if __name__ == "__main__":
-    process_regions()
+    # process_all_regions_elements()
+    process_all_regions_elements_parallel()

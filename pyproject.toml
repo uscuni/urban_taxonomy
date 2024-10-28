@@ -21,9 +21,9 @@ core = { path = ".", editable = true }
 manual_deps_dir = "mkdir manual_deps"
 clone_shapely = { cmd = "git clone https://github.com/martinfleis/shapely.git manual_deps/shapely/ && cd manual_deps/shapely/ && git checkout vw && git checkout 8260baa4d32abc59893440c0bdd0c2b2b7fac71e && git tag 2.5.0 && python -m pip install --no-deps --disable-pip-version-check -e ."}
 clone_momepy = { cmd = "git clone https://github.com/u3ks/momepy.git manual_deps/momepy/ && cd manual_deps/momepy/ && git checkout tess_single_building && python -m pip install --no-deps --disable-pip-version-check -e ."}
-clone_geoplanar = { cmd = "git clone https://github.com/sjsrey/geoplanar.git manual_deps/geoplanar/ && cd manual_deps/geoplanar/ && python -m pip install --no-deps --disable-pip-version-check -e ."}
-clone_fasthdbscan = { cmd = "git clone https://github.com/TutteInstitute/fast_hdbscan.git manual_deps/fasthdbscan/ && cd manual_deps/fasthdbscan/ && python -m pip install --no-deps --disable-pip-version-check -e ."}
-clone_sgeop = { cmd = "git clone https://github.com/uscuni/sgeop.git manual_deps/sgeop/ && cd manual_deps/sgeop/ && python -m pip install --no-deps --disable-pip-version-check -e ."}
+clone_geoplanar = { cmd = "git clone https://github.com/sjsrey/geoplanar.git manual_deps/geoplanar/ && cd manual_deps/geoplanar/ && git checkout 103d35488ed15a43092af129a8d5a042a2c8f07f && python -m pip install --no-deps --disable-pip-version-check -e ."}
+clone_fasthdbscan = { cmd = "git clone https://github.com/TutteInstitute/fast_hdbscan.git manual_deps/fasthdbscan/ && cd manual_deps/fasthdbscan/ && git checkout 40435f77364cc867e81b0e173820f00ce10e6e79 && python -m pip install --no-deps --disable-pip-version-check -e ."}
+clone_sgeop = { cmd = "git clone https://github.com/uscuni/sgeop.git manual_deps/sgeop/ && cd manual_deps/sgeop/ && git checkout f402491746085eeca1426e59070a178233279a49 && python -m pip install --no-deps --disable-pip-version-check -e ."}
 
 build = { cmd = "echo 'built manual deps'", depends-on=["manual_deps_dir", "clone_shapely", "clone_momepy", "clone_geoplanar", "clone_fasthdbscan", "clone_sgeop"]}
 
@@ -52,3 +52,5 @@ colorcet = ">=3.1.0,<4"
 pandas = ">=2.2.2,<3"
 esda = ">=2.6.0,<3"
 pytest = ">=8.3.2,<9"
+hdbscan = ">=0.8.38.post2,<0.9"
+jupyter-scatter = ">=0.19.1,<0.20"
