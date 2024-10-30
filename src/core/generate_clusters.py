@@ -78,7 +78,7 @@ def get_tree(training_data, clustering_graph, linkage, metric):
     return linkage_matrix
 
 
-def post_process_clusters(component_buildings_data, component_graph, component_clusters):
+def post_process_clusters_noise(component_buildings_data, component_graph, component_clusters):
     '''Process noise points and singletons within a set of clusters.'''
 
     component_clusters = component_clusters.copy()
@@ -100,6 +100,26 @@ def post_process_clusters(component_buildings_data, component_graph, component_c
 
     return component_clusters
 
+
+def post_process_clusters_tightening(group, min_cluster_size, t=7):
+    '''Drop cluster parts that are ``t`` standard deviations away from every part of the morphotope'''
+    
+    if group.name == -1: return pd.Series(np.full(group.shape[0], -1), group.index)
+
+    clusterer = AgglomerativeClustering(linkage='single',
+                                    metric='euclidean',
+                                    compute_full_tree=True,
+                                    compute_distances=True)
+    model = clusterer.fit(group.values)
+    linkage_matrix = get_linkage_matrix(model)
+    clusters = fcluster(linkage_matrix, t=7, criterion='distance')
+    
+    chars_clusters = pd.Series(clusters).value_counts()
+    chars_clusters[chars_clusters < min_cluster_size] = -1
+    chars_clusters[chars_clusters >= min_cluster_size] = group.name
+    clusters = pd.Series(clusters).map(lambda x: chars_clusters.loc[x]).values
+    return pd.Series(clusters, group.index)
+    
 
 def get_clusters(linkage_matrix, min_cluster_size, n_samples, eom_clusters=True):
     '''Extract hdbscan cluster types from a linkage matrix.'''
@@ -153,7 +173,12 @@ def cluster_data(X_train, graph, to_drop, clip, min_cluster_size, linkage, metri
             
             component_clusters = get_clusters(ward_tree, min_cluster_size, component_buildings_data.shape[0], eom_clusters=eom_clusters)
                 
-            # component_clusters = post_process_clusters(component_buildings_data, component_graph, component_clusters)
+           ## post process
+            res = component_buildings_data.groupby(component_clusters).apply(post_process_clusters_tightening, min_cluster_size=min_cluster_size)
+            if res.shape[0] == 1:
+                component_clusters = pd.Series(res.values[0], res.columns)
+            else:
+                component_clusters = pd.Series(res.values, res.index.get_level_values(1)).loc[component_buildings_data.index].values
             
             # for c in np.unique(component_clusters):
             #     # if c == -1: continue
@@ -199,7 +224,7 @@ def process_single_region_morphotopes(region_id):
 
 
     ### clustering parameters
-    min_cluster_size = 75
+    min_cluster_size = 100
     
     # spatial_lag = 3
     # kernel='gaussian' 
@@ -262,19 +287,13 @@ def process_regions(largest):
         regions_datadir + "regions/" + "cadastre_regions_hull.parquet"
     )
 
-    if largest:
-        for region_id in largest_regions:
-            process_single_region_morphotopes(region_id)
-            
-    else:
-        # region_hulls = region_hulls[~region_hulls.index.isin(largest_regions)]
-        # region_hulls = region_hulls[region_hulls.index == 69333]
-        from joblib import Parallel, delayed
-        n_jobs = -1
-        new = Parallel(n_jobs=n_jobs)(
-            delayed(process_single_region_morphotopes)(region_id) for region_id, _ in region_hulls.iterrows()
-        )
+    # region_hulls = region_hulls[~region_hulls.index.isin(largest_regions)]
+    region_hulls = region_hulls[region_hulls.index == 69333]
+    from joblib import Parallel, delayed
+    n_jobs = -1
+    new = Parallel(n_jobs=n_jobs)(
+        delayed(process_single_region_morphotopes)(region_id) for region_id, _ in region_hulls.iterrows()
+    )
 
 if __name__ == '__main__':
     process_regions(largest=False)
-    # process_regions(largest=True)
