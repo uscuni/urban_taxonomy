@@ -112,7 +112,7 @@ def post_process_clusters_tightening(group, min_cluster_size, t=7):
                                     compute_distances=True)
     model = clusterer.fit(group.values)
     linkage_matrix = get_linkage_matrix(model)
-    clusters = fcluster(linkage_matrix, t=7, criterion='distance')
+    clusters = fcluster(linkage_matrix, t=t, criterion='distance')
     
     chars_clusters = pd.Series(clusters).value_counts()
     chars_clusters[chars_clusters < min_cluster_size] = -1
@@ -173,12 +173,12 @@ def cluster_data(X_train, graph, to_drop, clip, min_cluster_size, linkage, metri
             
             component_clusters = get_clusters(ward_tree, min_cluster_size, component_buildings_data.shape[0], eom_clusters=eom_clusters)
                 
-           ## post process
-            res = component_buildings_data.groupby(component_clusters).apply(post_process_clusters_tightening, min_cluster_size=min_cluster_size)
-            if res.shape[0] == 1:
-                component_clusters = pd.Series(res.values[0], res.columns)
-            else:
-                component_clusters = pd.Series(res.values, res.index.get_level_values(1)).loc[component_buildings_data.index].values
+           ## post process - needs changing, since it doesnt make much of a difference
+            # res = component_buildings_data.groupby(component_clusters).apply(post_process_clusters_tightening, min_cluster_size=min_cluster_size, t=10)
+            # if res.shape[0] == 1:
+            #     component_clusters = pd.Series(res.values[0], res.columns)
+            # else:
+            #     component_clusters = pd.Series(res.values, res.index.get_level_values(1)).loc[component_buildings_data.index].values
             
             # for c in np.unique(component_clusters):
             #     # if c == -1: continue
