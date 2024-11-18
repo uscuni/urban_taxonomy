@@ -173,12 +173,12 @@ def cluster_data(X_train, graph, to_drop, clip, min_cluster_size, linkage, metri
             
             component_clusters = get_clusters(ward_tree, min_cluster_size, component_buildings_data.shape[0], eom_clusters=eom_clusters)
                 
-           ## post process - needs changing, since it doesnt make much of a difference
-            # res = component_buildings_data.groupby(component_clusters).apply(post_process_clusters_tightening, min_cluster_size=min_cluster_size, t=10)
-            # if res.shape[0] == 1:
-            #     component_clusters = pd.Series(res.values[0], res.columns)
-            # else:
-            #     component_clusters = pd.Series(res.values, res.index.get_level_values(1)).loc[component_buildings_data.index].values
+           # ## post process - needs changing, since it doesnt make much of a difference
+           #  res = component_buildings_data.groupby(component_clusters).apply(post_process_clusters_tightening, min_cluster_size=min_cluster_size, t=15)
+           #  if res.shape[0] == 1:
+           #      component_clusters = pd.Series(res.values[0], res.columns)
+           #  else:
+           #      component_clusters = pd.Series(res.values, res.index.get_level_values(1)).loc[component_buildings_data.index].values
             
             # for c in np.unique(component_clusters):
             #     # if c == -1: continue
@@ -224,7 +224,7 @@ def process_single_region_morphotopes(region_id):
 
 
     ### clustering parameters
-    min_cluster_size = 100
+    min_cluster_size = 75
     
     # spatial_lag = 3
     # kernel='gaussian' 
@@ -255,7 +255,7 @@ def process_single_region_morphotopes(region_id):
     else:
         clustering_data = X_train
 
-    print("--------Generating morphotopes----------")
+    print("--------Generating morphotopes----------", min_cluster_size)
     # run morphotopes clustering
     region_cluster_labels = cluster_data(clustering_data, graph, to_drop, clip, min_cluster_size, linkage, metric, eom_clusters=eom_clusters)
     region_cluster_labels.to_frame('morphotope_label').to_parquet(morphotopes_dir + f'tessellation_labels_morphotopes_{region_id}_{min_cluster_size}_{spatial_lag}_{lag_type}_{kernel}_{eom_clusters}.pq')
@@ -288,7 +288,7 @@ def process_regions(largest):
     )
 
     # region_hulls = region_hulls[~region_hulls.index.isin(largest_regions)]
-    region_hulls = region_hulls[region_hulls.index == 69333]
+    # region_hulls = region_hulls[region_hulls.index == 69333]
     from joblib import Parallel, delayed
     n_jobs = -1
     new = Parallel(n_jobs=n_jobs)(
