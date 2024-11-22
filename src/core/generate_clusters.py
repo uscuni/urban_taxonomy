@@ -237,7 +237,8 @@ def process_single_region_morphotopes(region_id):
     clip = None
     to_drop = ['stcSAl','stbOri','stcOri','stbCeA', 
                'ldkAre', 'ldkPer', 'lskCCo', 'lskERI',
-               'lskCWA', 'ltkOri', 'ltkWNB', 'likWBB', 'likWCe']
+               'lskCWA', 'ltkOri', 'ltkWNB', 'likWBB', 'likWCe',
+              ]
     
     linkage='ward'
     metric='euclidean'
@@ -256,6 +257,7 @@ def process_single_region_morphotopes(region_id):
         clustering_data = X_train
 
     print("--------Generating morphotopes----------", min_cluster_size)
+    print("--------Dropping columns----------", to_drop)
     # run morphotopes clustering
     region_cluster_labels = cluster_data(clustering_data, graph, to_drop, clip, min_cluster_size, linkage, metric, eom_clusters=eom_clusters)
     region_cluster_labels.to_frame('morphotope_label').to_parquet(morphotopes_dir + f'tessellation_labels_morphotopes_{region_id}_{min_cluster_size}_{spatial_lag}_{lag_type}_{kernel}_{eom_clusters}.pq')
