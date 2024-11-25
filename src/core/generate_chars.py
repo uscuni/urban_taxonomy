@@ -207,14 +207,28 @@ def process_street_chars(
     buildings = gpd.read_parquet(buildings_dir + f"buildings_{region_id}.parquet")
 
     blg_nid = mm.get_nearest_street(
-        buildings, streets
+        buildings, edges
     )
+    # buildings per metre
     edges["sisBpM"] = blg_nid.value_counts() / edges.length
 
+    ## building area variability
+    edges['misBAD'] = buildings.area.groupby(blg_nid).std().fillna(0)
+
+    # street profile
     profile = mm.street_profile(edges, buildings, height=None, distance=3)
     edges["sdsSPW"] = profile["width"]
     edges["sdsSPO"] = profile["openness"]
     edges["sdsSWD"] = profile["width_deviation"]
+
+
+
+    
+    # node building interactions
+    bnode_id = mm.get_nearest_node(
+        buildings, nodes, edges, blg_nid
+    )
+    nodes['midBAD'] = buildings.area.groupby(bnode_id).std().fillna(0)
 
     ## nodes tessellation interactions
     nodes_graph = read_parquet(graph_dir + f"nodes_graph_{region_id}.parquet")
@@ -426,7 +440,7 @@ def process_building_chars(
     # )
     
     blg_nid = mm.get_nearest_street(
-        buildings, streets
+        buildings, edges
     )
     street_orientation = mm.orientation(streets)
     buildings["nID"] = blg_nid
@@ -505,6 +519,28 @@ def process_tessellation_chars(
     # tesselation buildings interactions
     buildings = gpd.read_parquet(buildings_dir + f"buildings_{region_id}.parquet")
     tessellation["sicCAR"] = buildings.geometry.area / tessellation.geometry.area
+
+    ## building area deviations in tess cell neighbourhood
+    tessellation['barea'] = buildings.area
+    tessellation['barea'] = tessellation['barea'].fillna(0)
+    assert (tessellation.loc[buildings.index, 'barea'] == buildings.area).all()
+    
+    res = queen_1.describe(tessellation['barea'])
+    tessellation['micBAD'] = res['std']
+
+    def partial_barea_std(partial_focal, partial_higher, y):
+        return partial_higher.describe(
+            y.loc[partial_higher.unique_ids], statistics=["std"]
+        )["std"]
+    
+    tessellation['licBAD'] = partial_apply(
+        queen_1,
+        higher_order_k=3,
+        n_splits=30,
+        func=partial_barea_std,
+        y=tessellation['barea'],
+    )
+    
 
     ## tesselation street interactions
     streets = gpd.read_parquet(streets_dir + f"streets_{region_id}.parquet")

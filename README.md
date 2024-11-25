@@ -19,6 +19,7 @@ Data product
     - `code/explore_cadastre_data.ipynb` to standardise all the cadstre data from different countries into a single format
     - `code/generate_regions.ipynb` to split the buildings into regions for independent processing
     - `code/download_streets.ipynb` to download the raw overture streets for every region
+    - `code/processing_apartment_blocks.ipynb` to update socialist housing in Czechia ( needs to be run after building simplification)
     - `bash full_run.sh` to run the entire processing pipeline from building, street preprocessing, element generation, characters calculations and morphotope creation.
     - `code/region_ward_clustering.ipynb` to generate the heirarchy of morphotopes.
 

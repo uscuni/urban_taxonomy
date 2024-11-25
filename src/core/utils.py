@@ -276,6 +276,13 @@ used_keys = {
     "mibLAL": "connected buildings longest axis length",
     "mibFR": "connected buildings facade ratio",
     "mibSCo": "connected buildings square compactness",
+
+
+    "micBAD": "deviation of building area in tess. neighbourhood",
+    "licBAD": "deviation of building area in tess. 3 neighbourhood",
+    "misBAD": "deviation of building area in street-attached buildings",
+    "midBAD": "deviation of building area in node-attached buildings",
+
 }
 
 char_units = {
