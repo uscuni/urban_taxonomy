@@ -6,7 +6,7 @@ import numba
 import numpy as np
 import pandas as pd
 from libpysal.graph import read_parquet
-from sklearn.preprocessing import PowerTransformer, RobustScaler, StandardScaler
+from sklearn.preprocessing import PowerTransformer, RobustScaler, StandardScaler, QuantileTransformer
 from scipy import stats
 import shapely
 
@@ -38,7 +38,7 @@ regions_datadir = "/data/uscuni-ulce/"
 
 from core.utils import largest_regions
 
-def preprocess_clustering_data(X_train, clip, to_drop):
+def preprocess_clustering_data(X_train, scalar, clip, to_drop):
     '''Data pre-processing before clustering is carried out.'''
     ## drop non-buildings
     X_train = X_train[X_train.index >= 0]
@@ -50,7 +50,7 @@ def preprocess_clustering_data(X_train, clip, to_drop):
     X_train = X_train.drop(all_drop, axis=1)
 
     # standardise data
-    vals = StandardScaler().fit_transform(X_train)
+    vals = scalar.fit_transform(X_train)
     X_train = pd.DataFrame(vals, columns=X_train.columns, index=X_train.index)
     vals = np.nan_to_num(X_train)
     X_train = pd.DataFrame(vals, columns=X_train.columns, index=X_train.index)
@@ -141,7 +141,8 @@ def get_clusters(linkage_matrix, min_cluster_size, n_samples, eom_clusters=True)
 
 
 
-def cluster_data(X_train, graph, to_drop, clip, min_cluster_size, linkage, metric, eom_clusters=True):
+def cluster_data(X_train, graph, scalar, to_drop, clip, 
+                 min_cluster_size, linkage, metric, eom_clusters=True):
     '''Split the input data into connected components and carry out an agglomerative clustering for each component independently.
     Pre-process the input data, cluster and then carry out post-processing and finally combine all the seperate clusterings into one set of clusters.'''
     
@@ -157,7 +158,7 @@ def cluster_data(X_train, graph, to_drop, clip, min_cluster_size, linkage, metri
             component_clusters = np.full(group.shape[0], -1)
     
         else:
-            component_buildings_data = preprocess_clustering_data(X_train.loc[group.index.values], clip=clip, to_drop=to_drop)
+            component_buildings_data = preprocess_clustering_data(X_train.loc[group.index.values], scalar=scalar, clip=clip, to_drop=to_drop)
             component_graph = building_graph.subgraph(group.index.values)
             ward_tree = get_tree(component_buildings_data, component_graph.transform('B').sparse, linkage, metric)
     
@@ -238,11 +239,17 @@ def process_single_region_morphotopes(region_id):
     to_drop = ['stcSAl','stbOri','stcOri','stbCeA', 
                'ldkAre', 'ldkPer', 'lskCCo', 'lskERI',
                'lskCWA', 'ltkOri', 'ltkWNB', 'likWBB', 'likWCe',
+              'licBAD',
+              'misBAD',
+               'ssbCCM',
+               'ssbCCD'
               ]
     
     linkage='ward'
     metric='euclidean'
     eom_clusters = False
+
+    scalar = QuantileTransformer(subsample=None, output_distribution='uniform')
 
     print("--------Generating lag----------")
     ## generate lag, filter and attack to data
@@ -259,7 +266,7 @@ def process_single_region_morphotopes(region_id):
     print("--------Generating morphotopes----------", min_cluster_size)
     print("--------Dropping columns----------", to_drop)
     # run morphotopes clustering
-    region_cluster_labels = cluster_data(clustering_data, graph, to_drop, clip, min_cluster_size, linkage, metric, eom_clusters=eom_clusters)
+    region_cluster_labels = cluster_data(clustering_data, graph, scalar, to_drop, clip, min_cluster_size, linkage, metric, eom_clusters=eom_clusters)
     region_cluster_labels.to_frame('morphotope_label').to_parquet(morphotopes_dir + f'tessellation_labels_morphotopes_{region_id}_{min_cluster_size}_{spatial_lag}_{lag_type}_{kernel}_{eom_clusters}.pq')
 
     ## generate morphotopes boundaries
