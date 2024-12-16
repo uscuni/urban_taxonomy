@@ -166,3 +166,24 @@ def get_linkage_matrix(model):
         [model.children_, model.distances_, counts]
     ).astype(float)
     return linkage_matrix
+
+def morphotopes_to_etcs(region_id, etcs=True, model_params='_100_0_None_None_False'):
+
+
+    if etcs:
+        etcs = gpd.read_parquet(f'/data/uscuni-ulce/processed_data/tessellations/tessellation_{region_id}.parquet')
+
+    else:
+        etcs = gpd.read_parquet(f'/data/uscuni-ulce/processed_data/buildings/buildings_{region_id}.parquet')
+        
+    etcs['label'] = -1
+    
+    morphotopes = pd.read_parquet(f'/data/uscuni-ulce/processed_data/morphotopes/tessellation_labels_morphotopes_{region_id}{model_params}.pq')
+    morphotopes.loc[:, 'morphotope_label'] =  morphotopes.values[:, 0]
+
+    morph_dict = pd.Series(np.arange(np.unique(morphotopes.values).shape[0]),
+                       np.unique(morphotopes.values))
+    etcs.loc[morphotopes.index, 'label'] = morphotopes.map(lambda x: morph_dict.loc[x]).values
+    etcs['morph'] = str(region_id) + '_' + '-1'
+    etcs.loc[morphotopes.index, 'morph'] = str(region_id) + '_' + morphotopes.values
+    return etcs
