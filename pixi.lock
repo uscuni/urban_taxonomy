@@ -421,6 +421,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/zlib-ng-2.2.2-h5888daf_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/zstandard-0.23.0-py312hef9b889_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/zstd-1.5.6-ha6fb4c9_0.conda
+      - pypi: https://files.pythonhosted.org/packages/2b/8b/7cadf942e750bd0e928a41590e870809051fe9b218183de165c546ed33c9/evoc-0.1.1-py3-none-any.whl
       - pypi: .
 packages:
 - kind: conda
@@ -1546,7 +1547,9 @@ packages:
   name: core
   version: 0.1.0
   path: .
-  sha256: f5ee208d548c85b6eec4b2fc2a57107235aad85c4599b2e92c04c67e28bc94cd
+  sha256: 11a948aab1db1beea3dd379056e839a871e0a7483b1088a589fcc2787bc54729
+  requires_dist:
+  - evoc>=0.1.1,<0.2
   requires_python: '>=3.12.4'
   editable: true
 - kind: conda
@@ -1887,6 +1890,17 @@ packages:
   - pkg:pypi/et-xmlfile?source=hash-mapping
   size: 21781
   timestamp: 1729893031985
+- kind: pypi
+  name: evoc
+  version: 0.1.1
+  url: https://files.pythonhosted.org/packages/2b/8b/7cadf942e750bd0e928a41590e870809051fe9b218183de165c546ed33c9/evoc-0.1.1-py3-none-any.whl
+  sha256: 19172a08bb29e1f2839b74eee0c57d4b9b379c9bcc8d34976b8f48a32d586d83
+  requires_dist:
+  - numpy>=1.21
+  - scikit-learn>=1.1
+  - numba>=0.59
+  - tqdm
+  requires_python: '>=3.9'
 - kind: conda
   name: exceptiongroup
   version: 1.2.2

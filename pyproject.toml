@@ -1,6 +1,6 @@
 [project]
 authors = [{name = "Krasen Samardzhiev", email = "krasensam@gmail.com"}]
-dependencies = []
+dependencies = ["evoc>=0.1.1,<0.2"]
 description = "Add a short description here"
 name = "core"
 requires-python = ">= 3.12.4"
