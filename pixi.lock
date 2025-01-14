@@ -109,6 +109,8 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/graphite2-1.3.13-h59595ed_1003.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/h11-0.14.0-pyhd8ed1ab_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/noarch/h2-4.1.0-pyhd8ed1ab_0.tar.bz2
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/h3-4.2.0-h5888daf_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/h3-py-4.1.1-py312h2ec8cdc_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/harfbuzz-9.0.0-hda332d3_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/hdbscan-0.8.38.post2-py312hc0a28a1_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/holoviews-1.18.3-pyhd8ed1ab_0.conda
@@ -1547,7 +1549,7 @@ packages:
   name: core
   version: 0.1.0
   path: .
-  sha256: 11a948aab1db1beea3dd379056e839a871e0a7483b1088a589fcc2787bc54729
+  sha256: b2cfdfa330bf73bce8e9f1215dbd4d6ce0e753bccc0972534ef842aa47ee1067
   requires_dist:
   - evoc>=0.1.1,<0.2
   requires_python: '>=3.12.4'
@@ -2404,6 +2406,45 @@ packages:
   - pkg:pypi/h2?source=hash-mapping
   size: 46754
   timestamp: 1634280590080
+- kind: conda
+  name: h3
+  version: 4.2.0
+  build: h5888daf_0
+  subdir: linux-64
+  url: https://conda.anaconda.org/conda-forge/linux-64/h3-4.2.0-h5888daf_0.conda
+  sha256: edd60f180ce4e44d0e6bc2c1888851ffa3b1f617dc69cae68330aa38b2f6bcda
+  md5: ca6ad4c9af0ac2621836123e87a28d0c
+  depends:
+  - __glibc >=2.17,<3.0.a0
+  - libgcc >=13
+  - libstdcxx >=13
+  license: Apache-2.0
+  license_family: Apache
+  purls: []
+  size: 122546
+  timestamp: 1733438380937
+- kind: conda
+  name: h3-py
+  version: 4.1.1
+  build: py312h2ec8cdc_1
+  build_number: 1
+  subdir: linux-64
+  url: https://conda.anaconda.org/conda-forge/linux-64/h3-py-4.1.1-py312h2ec8cdc_1.conda
+  sha256: b76b462223e112a6e24822a5b7ca71310ee93b3572d412ba6ada3653feb37fca
+  md5: 0ac1b38d8b30307af90c23ceeb99d7e7
+  depends:
+  - __glibc >=2.17,<3.0.a0
+  - libgcc >=13
+  - libstdcxx >=13
+  - numpy
+  - python >=3.12,<3.13.0a0
+  - python_abi 3.12.* *_cp312
+  license: Apache-2.0
+  license_family: Apache
+  purls:
+  - pkg:pypi/h3?source=hash-mapping
+  size: 445221
+  timestamp: 1729622487598
 - kind: conda
   name: harfbuzz
   version: 9.0.0
