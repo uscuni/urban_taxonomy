@@ -1,6 +1,6 @@
 [project]
 authors = [{name = "Krasen Samardzhiev", email = "krasensam@gmail.com"}]
-dependencies = []
+dependencies = ["evoc>=0.1.1,<0.2"]
 description = "Add a short description here"
 name = "core"
 requires-python = ">= 3.12.4"
@@ -55,5 +55,8 @@ pytest = ">=8.3.2,<9"
 hdbscan = ">=0.8.38.post2,<0.9"
 jupyter-scatter = ">=0.19.1,<0.20"
 openpyxl = ">=3.1.5,<4"
-tobler = ">=0.12.0,<0.13"
+h3 = ">=4.2.0,<5"
 h3-py = ">=4.1.1,<5"
+rioxarray = ">=0.17.0,<0.18"
+xvec = ">=0.3.1,<0.4"
+tobler = ">=0.12.0,<0.13"

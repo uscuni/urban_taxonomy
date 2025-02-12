@@ -7,7 +7,7 @@ def get_dendrogram_scatter_data(linkage_matrix):
        Every point is a cluster merger and has x,y,group and order attributes. 
        The x coordinate and item order is calculated by scipy dendrogram, the y is the height of the connection.
        The group and order fields show how to draw the links between the x and y points.
-       The data is doubled, since every point can be a part of only one group, but most points have are both a parent and child.
+       The data is doubled, since every point can be a part of only one group, but most points are both a parent and child.
        Therefore, during the plotting two points are plotted one over the other.
        '''
     R = dendrogram(linkage_matrix, no_plot=True)

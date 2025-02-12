@@ -269,7 +269,7 @@ used_keys = {
 
     "mibCou": "connected buildings count",
     "mibAre": "connected buildings area",
-    "mibLen": "connected buildings count",
+    "mibLen": "connected buildings perimeter",
     "mibElo": "connected buildings elongation",
     "mibERI": "connected buildings equivalent rectangle index",
     "mibCCo": "connected buildings circular compactness",
