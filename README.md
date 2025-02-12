@@ -21,6 +21,12 @@ Data product
     - `code/download_streets.ipynb` to download the raw overture streets for every region
     - `code/processing_apartment_blocks.ipynb` to update socialist housing in Czechia ( needs to be run after building simplification)
     - `bash full_run.sh` to run the entire processing pipeline from building, street preprocessing, element generation, characters calculations and morphotope creation.
-    - `code/region_ward_clustering.ipynb` to generate the heirarchy of morphotopes.
+    - `code/divisive_kmeans.ipynb` to generate the heirarchy of morphotopes.
+    - `code/noise.ipynb` to assign the noise points to the nearest clusters.
+    - `code/cluster_naming.ipynb` to see the cluster naming notebook.
+    - `code/comparisons.ipynb` to generate comparisons with other data products.
+
+    - `code/cluster_exploration.ipynb` to map specific regions.
+    - `code/interactive_chars_exploration.ipynb` to interactively plot characters in specific regions.
 
 6. (optional) to run the analysis on individual regions use - `code/process_region.ipynb` and `code/region_clustering.ipynb` notebooks.
