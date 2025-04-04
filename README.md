@@ -1,6 +1,6 @@
 # Urban landscape of Central Europe
 
-Data product
+Notebooks, enrivonment and code to generate the taxonomy of central european urban fabric.
 
 # To run:
 
@@ -24,9 +24,10 @@ Data product
     - `code/divisive_kmeans.ipynb` to generate the heirarchy of morphotopes.
     - `code/noise.ipynb` to assign the noise points to the nearest clusters.
     - `code/cluster_naming.ipynb` to see the cluster naming notebook.
-    - `code/comparisons.ipynb` to generate comparisons with other data products.
+    - `code/results.ipynb` to generate comparisons with other data products and figures.
+
+    - `code/add_regions_from_new_buildings.ipynb` to process a new set of buildings - split into regions, name the regions and add them to the existing regions directory.
+    - `code/process_region.ipynb` to process individual regions or groups of specific regions sequentially or in parallel. 
 
     - `code/cluster_exploration.ipynb` to map specific regions.
     - `code/interactive_chars_exploration.ipynb` to interactively plot characters in specific regions.
-
-6. (optional) to run the analysis on individual regions use - `code/process_region.ipynb` and `code/region_clustering.ipynb` notebooks.
