@@ -1695,7 +1695,7 @@ packages:
   name: core
   version: 0.1.0
   path: .
-  sha256: 0cc2b6784edb8bdabdfdb29c67ef4c5e799bc241288560a70480f1610e1865bb
+  sha256: daffcb24a36f48fbe84c686a67cbfb54170b636b1c3cbd405b8b7a35d4a7668e
   requires_dist:
   - evoc>=0.1.1,<0.2
   requires_python: '>=3.12.4'
