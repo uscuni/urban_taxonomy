@@ -75,7 +75,7 @@ def process_region_buildings(buildings, simplify, simplification_tolerance=.1, m
     )
 
     ## drop remaining overlaps
-    buildings = geoplanar.trim_overlaps(buildings, largest=False)
+    buildings = geoplanar.trim_overlaps(buildings, strategy=False)
 
     ## fix any multipolygons
     buildings = buildings.explode(ignore_index=True)

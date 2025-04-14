@@ -9,6 +9,15 @@ import numpy as np
 from pandas.testing import assert_series_equal
 import shapely
 
+
+from core.generate_buildings import read_region_buildings, process_region_buildings
+from core.generate_streets import process_region_streets, process_single_region_streets
+from core.generate_elements import process_region_elements, generate_enclosures_representative_points, generate_tess
+from core.generate_ngraphs import process_region_graphs
+from core.generate_chars import process_single_region_chars
+from core.generate_merged_primary_chars import merge_into_primary
+from core.generate_clusters import process_single_region_morphotopes
+
 class TestCore:
     
     def setup_method(self):
@@ -188,4 +197,66 @@ class TestCore:
         enclosures = generate_enclosures_representative_points(self.buildings, self.edges)
         tessellation = mm.enclosed_tessellation(self.buildings, enclosures.geometry, simplify=True)
         assert True # only testing if the above 2 functions work in the environment
+
+
+    def test_pipeline_with_overture_data(self):        
+
+        region_id = 'temp_region'
+        regions_buildings_dir = overture_streets_dir = 'test/'
+        buildings_dir = enclosures_dir = graph_dir = tessellations_dir = streets_dir = chars_dir = morphotopes_dir = 'test/processed_data/'
+        
+        # run pipeline
+        buildings = gpd.read_parquet(regions_buildings_dir + f'buildings_{region_id}.pq')
+        buildings = process_region_buildings(buildings, True, simplification_tolerance=.1, merge_limit=25)
+        buildings.to_parquet(buildings_dir + f"buildings_{region_id}.parquet")
+    
+        ## processs streets
+        streets = process_region_streets(region_id, overture_streets_dir, buildings_dir)
+        streets.to_parquet(streets_dir + f'streets_{region_id}.parquet')
+    
+        # elements
+        enclosures, tesselations = process_region_elements(buildings_dir, streets_dir, region_id)
+        enclosures.to_parquet(enclosures_dir + f"enclosure_{region_id}.parquet")
+        tesselations.to_parquet(
+            tessellations_dir + f"tessellation_{region_id}.parquet"
+        )
+    
+        #graphs
+        process_region_graphs(
+        region_id,
+        graph_dir,
+        buildings_dir,
+        streets_dir,
+        enclosures_dir,
+        tessellations_dir,
+        )
+    
+        #chars
+        process_single_region_chars(
+            region_id,
+            graph_dir,
+            buildings_dir,
+            streets_dir,
+            enclosures_dir,
+            tessellations_dir,
+            chars_dir
+        )
+    
+        # #primary merge
+        merge_into_primary(region_id,
+            graph_dir,
+            buildings_dir,
+            streets_dir,
+            enclosures_dir,
+            tessellations_dir,
+            chars_dir)
+    
+        # # morphotope
+        process_single_region_morphotopes(region_id,
+            graph_dir,
+            buildings_dir,
+            streets_dir,
+            enclosures_dir,
+            tessellations_dir,
+            chars_dir, morphotopes_dir)
         
