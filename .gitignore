@@ -146,4 +146,4 @@ manual_deps/
 .pixi/
 data/
 *_log.txt
-test/
+test/processed_data/

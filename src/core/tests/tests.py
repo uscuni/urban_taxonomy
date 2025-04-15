@@ -7,7 +7,10 @@ from core.generate_elements import generate_enclosures_representative_points
 import momepy as mm
 import numpy as np
 from pandas.testing import assert_series_equal
-import shapely
+import shapely        
+from pandas.testing import assert_frame_equal, assert_series_equal
+from geopandas.testing import assert_geoseries_equal
+from libpysal.graph import read_parquet
 
 
 from core.generate_buildings import read_region_buildings, process_region_buildings
@@ -17,6 +20,9 @@ from core.generate_ngraphs import process_region_graphs
 from core.generate_chars import process_single_region_chars
 from core.generate_merged_primary_chars import merge_into_primary
 from core.generate_clusters import process_single_region_morphotopes
+
+
+import glob
 
 class TestCore:
     
@@ -196,7 +202,7 @@ class TestCore:
     def test_tess_simplification_env_setup(self):
         enclosures = generate_enclosures_representative_points(self.buildings, self.edges)
         tessellation = mm.enclosed_tessellation(self.buildings, enclosures.geometry, simplify=True)
-        assert True # only testing if the above 2 functions work in the environment
+        assert True # only testing if the above 2 functions work in the environment, the real test is in momepy
 
 
     def test_pipeline_with_overture_data(self):        
@@ -250,7 +256,16 @@ class TestCore:
             enclosures_dir,
             tessellations_dir,
             chars_dir)
-    
+
+        
+    def test_morphotope_delin(self):
+
+        # use the preprocessed data, since even small changes to the input data can change the order within the tree
+        regions_buildings_dir = overture_streets_dir = 'test/'
+        morphotopes_dir = 'test/processed_data/'
+        buildings_dir = enclosures_dir = graph_dir = tessellations_dir = streets_dir = chars_dir = 'test/actual_data/'
+        region_id = 'temp_region'
+        
         # # morphotope
         process_single_region_morphotopes(region_id,
             graph_dir,
@@ -259,4 +274,63 @@ class TestCore:
             enclosures_dir,
             tessellations_dir,
             chars_dir, morphotopes_dir)
+
+    def test_pipeline_values(self):
         
+        test_dir = 'test/processed_data/'
+        actual_dir = 'test/actual_data/'
+        
+        tess_chars = [
+         'sdcLAL',
+         'sdcAre',
+         'sscCCo',
+         'sscERI',
+         'mtcWNe',
+         'sicCAR']
+
+        # test graphs
+        for test_file in glob.glob(test_dir + '*graph*'):
+            test_data = read_parquet(test_file)
+            expected_data = read_parquet(actual_dir + test_file.split('/')[-1])
+            # do not check index because behavoir has changed
+            assert_series_equal(test_data.cardinalities,
+                                expected_data.cardinalities,
+                                check_index_type=False,
+                                check_index=False)
+
+        # test characters - tessellation characters are either ignored or have a higher tolerance
+        # since the simplification behaviour has changed.
+        to_skip = ['stbCeA', 'stcOri', 'stcSAl']
+        new_data = pd.read_parquet('test/processed_data/primary_chars_temp_region.parquet')
+        expected_data = pd.read_parquet('test/actual_data/primary_chars_temp_region.parquet')
+        for col in new_data.columns:
+        
+            if col in to_skip:
+                continue
+            
+            if col in tess_chars:
+               rtol = .1
+            else:
+                rtol = .001
+            
+            s1 = new_data[col]
+            s2 = expected_data[col]
+        
+            assert_series_equal(s1, s2, rtol=rtol)
+
+        # tests morphotope calculations
+        new_morph = pd.read_parquet('test/processed_data/data_morphotopes_temp_region_75_0_None_None_False.pq')
+        expected_morph = pd.read_parquet('test/actual_data/data_morphotopes_temp_region_75_0_None_None_False.pq')
+        
+        new_morph_labels = pd.read_parquet('test/processed_data/tessellation_labels_morphotopes_temp_region_75_0_None_None_False.pq')
+        expected_morph_labels = pd.read_parquet('test/actual_data/tessellation_labels_morphotopes_temp_region_75_0_None_None_False.pq')
+          
+        # test morphotope labels
+        assert_series_equal(new_morph_labels.morphotope_label, expected_morph_labels.morphotope_label)
+        
+        # test morphotope agg data
+        for col in new_morph.columns:
+            s1 = new_morph[col]
+            s2 = expected_morph[col]
+            assert_series_equal(s1, s2)
+  
