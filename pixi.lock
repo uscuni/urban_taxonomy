@@ -264,7 +264,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/mdurl-0.1.2-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/minizip-4.0.7-h05a5f5f_3.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/mistune-3.1.1-pyhd8ed1ab_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/momepy-0.9.1-pyhd8ed1ab_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/momepy-0.10.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/msgpack-python-1.1.0-py312h68727a3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/multipledispatch-0.6.0-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/munkres-1.1.4-pyh9f0ad1d_0.tar.bz2
@@ -1287,7 +1287,7 @@ packages:
 - pypi: .
   name: core
   version: 0.1.0
-  sha256: 2d06b5c25e3f843d5216867d9217ac24b69b64597d42dc585b8ec8989cdc96e6
+  sha256: 7e7e627d734bb3f41500a12d5006713bc959ac47fa149bcf503cca0f9c101fe8
   requires_dist:
   - geoplanar>=0.4.0,<0.5
   requires_python: ==3.12.*
@@ -4083,24 +4083,24 @@ packages:
   - pkg:pypi/mistune?source=compressed-mapping
   size: 68935
   timestamp: 1738085278568
-- conda: https://conda.anaconda.org/conda-forge/noarch/momepy-0.9.1-pyhd8ed1ab_0.conda
-  sha256: ba5317fcd0ac75c1216d5bf9b2e94f80504f40be738778869e008331cbb490a8
-  md5: 6285d91190167578d7b8b379e6b2466f
+- conda: https://conda.anaconda.org/conda-forge/noarch/momepy-0.10.0-pyhd8ed1ab_0.conda
+  sha256: a144b6da46f94177663243daf174418e0b703a9ac58861edf7235d3d03e96d47
+  md5: 05836477b9e93a8318ccbd2dd6bf0d57
   depends:
   - geopandas >=0.12.0
   - libpysal >=4.12.0
   - networkx >=2.8
   - packaging
   - pandas >=1.5.1
-  - python >=3.10
+  - python >=3.11
   - shapely >=2
   - tqdm >=4.63.0
   license: BSD-3-Clause
   license_family: BSD
   purls:
   - pkg:pypi/momepy?source=hash-mapping
-  size: 1637609
-  timestamp: 1732874739484
+  size: 1640874
+  timestamp: 1744970229055
 - conda: https://conda.anaconda.org/conda-forge/linux-64/msgpack-python-1.1.0-py312h68727a3_0.conda
   sha256: 4bc53333774dea1330643b7e23aa34fd6880275737fc2e07491795872d3af8dd
   md5: 5c9b020a3f86799cdc6115e55df06146
