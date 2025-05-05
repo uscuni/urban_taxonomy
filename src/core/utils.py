@@ -4,6 +4,22 @@ import pandas as pd
 import geopandas as gpd
 from libpysal.graph import Graph
 
+def make_ordinal(n):
+    '''
+    Convert an integer into its ordinal representation::
+
+        make_ordinal(0)   => '0th'
+        make_ordinal(3)   => '3rd'
+        make_ordinal(122) => '122nd'
+        make_ordinal(213) => '213th'
+    '''
+    n = int(n)
+    if 11 <= (n % 100) <= 13:
+        suffix = 'th'
+    else:
+        suffix = ['th', 'st', 'nd', 'rd', 'th'][min(n % 10, 4)]
+    return str(n) + suffix
+
 
 def lazy_higher_order(graph, k, n_splits, iteration_order=None):
     """Generate a higher order pysal.Graph in chunks"""
