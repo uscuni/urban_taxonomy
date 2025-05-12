@@ -4,6 +4,42 @@ import pandas as pd
 import geopandas as gpd
 from libpysal.graph import Graph
 
+
+def get_cluster_names(mapping_level):
+
+    if mapping_level == 1:
+        cluster_names = {
+     1: 'Sparse Street Network',
+     2: 'Dense Street Network',
+}
+
+    elif mapping_level == 2:
+        cluster_names ={
+    1: 'Large Scale Developments',
+    2: 'Non-urban Developments',
+    3: 'Large Interconnected Blocks',
+    4: 'Structured Developments'
+    
+}
+
+    
+    elif mapping_level == 3:
+        cluster_names = {
+    1: "Wide-space Developments",
+    2: "Large Utilitarian Developments",
+    3: "Linear Developments",
+    4: "Open Layout",
+    5: "Aligned Winding Streets",
+    6: "Large Interconnected Blocks",
+    7: "Dense Standalone Buildings",
+    8: "Dense Adjacent Buildings"
+}
+    else:
+        raise Exceptions('Not named')
+
+    return cluster_names
+
+
 def make_ordinal(n):
     '''
     Convert an integer into its ordinal representation::
