@@ -1,6 +1,6 @@
 # Urban landscape of Central Europe
 
-Notebooks, enrivonment and code to generate the taxonomy of central european urban fabric.
+Notebooks, enrivonment and code to generate the taxonomy of Central European Urban Fabric.
 
 # To run:
 
@@ -13,7 +13,10 @@ Notebooks, enrivonment and code to generate the taxonomy of central european urb
 
 4. To run jupyter use either `pixi run jupyter lab` or pass extra arguments like `pixi run jupyter lab --port 8888`.
 
-5. To run the analysis on the whole dataset - first, make sure you have the correct folder structure in place. Then, run:
+
+# Reproducing the paper
+
+To run the analysis on the whole dataset - first, make sure you have the correct folder structure in place. Then, run:
 
     - `code/download_buildings.ipynb` to download all the cadastre data for central europe
     - `code/explore_cadastre_data.ipynb` to standardise all the cadstre data from different countries into a single format
@@ -30,13 +33,22 @@ Notebooks, enrivonment and code to generate the taxonomy of central european urb
 
 Additional notebooks:
 
-    - `code/add_regions_from_new_buildings.ipynb` to process a new set of buildings - split buildings into regions, name the regions and add them to the existing regions directory.
     - `code/process_region.ipynb` to process individual regions or groups of specific regions sequentially or in parallel. 
     
     - `code/cluster_exploration.ipynb` to map specific regions and explore the cluster assignments.
     - `code/interactive_chars_exploration.ipynb` to interactively plot characters in specific regions.
 
+# Extending the hierarchy
+To extend the hierarchy with new data:
+1. Download the new building footprints first
+2. `code/add_regions_from_new_buildings.ipynb` to process the new set of buildings - split buildings into regions, name the regions and add them to the existing regions directory.
+2. `code/download_streets.ipynb` to download the streets for the new regions from overture
+3. `code/process_region.ipynb` for the new regions to run the full processing pipeline - building and street processing, generating elements, morphometric characteristics and morphotope deliniation.
+4. `code/morphotope_postprocessing.ipynb` to fix morphotope geometries based on adjacency.
+5. `code/morphotope_chars.ipynb` to generate characteristics specific to morphotopes.
+The either clustering 
 
+# Generating additional data
 To generate the PM tiles, website assests and the data product:
     - `code/generate_pmtiles.ipynb` to generate pm tiles from the clustering results.
     - `code/tree_for_viz.ipynb` to generate the data for the website taxonomy visualisations
