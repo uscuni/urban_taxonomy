@@ -21,13 +21,24 @@ Notebooks, enrivonment and code to generate the taxonomy of central european urb
     - `code/download_streets.ipynb` to download the raw overture streets for every region
     - `code/processing_apartment_blocks.ipynb` to update socialist housing in Czechia ( needs to be run after building simplification)
     - `bash full_run.sh` to run the entire processing pipeline from building, street preprocessing, element generation, characters calculations and morphotope creation.
-    - `code/divisive_kmeans.ipynb` to generate the heirarchy of morphotopes.
     - `code/noise.ipynb` to assign the noise points to the nearest clusters.
-    - `code/cluster_naming.ipynb` to see the cluster naming notebook.
+    - `code/morphotope_postprocessing.ipynb` to fix morphotope geometries based on adjacency.
+    - `code/morphotope_chars.ipynb` to generate characteristics specific to morphotopes.
+    - `code/clustering.ipynb` to generate the heirarchy of morphotopes, and store the data.
+    - `code/noise.ipynb` to assign the noise points to the nearest clusters.
     - `code/results.ipynb` to generate comparisons with other data products and figures.
 
-    - `code/add_regions_from_new_buildings.ipynb` to process a new set of buildings - split into regions, name the regions and add them to the existing regions directory.
-    - `code/process_region.ipynb` to process individual regions or groups of specific regions sequentially or in parallel. 
+Additional notebooks:
 
-    - `code/cluster_exploration.ipynb` to map specific regions.
+    - `code/add_regions_from_new_buildings.ipynb` to process a new set of buildings - split buildings into regions, name the regions and add them to the existing regions directory.
+    - `code/process_region.ipynb` to process individual regions or groups of specific regions sequentially or in parallel. 
+    
+    - `code/cluster_exploration.ipynb` to map specific regions and explore the cluster assignments.
     - `code/interactive_chars_exploration.ipynb` to interactively plot characters in specific regions.
+
+
+To generate the PM tiles, website assests and the data product:
+    - `code/generate_pmtiles.ipynb` to generate pm tiles from the clustering results.
+    - `code/tree_for_viz.ipynb` to generate the data for the website taxonomy visualisations
+    - `code/data_products.ipynb` to generate the data products
+    - `code/data_products_guide.ipynb` - guide how to use the data products.
