@@ -17,26 +17,24 @@ Notebooks, enrivonment and code to generate the taxonomy of Central European Urb
 # Reproducing the paper
 
 To run the analysis on the whole dataset - first, make sure you have the correct folder structure in place. Then, run:
-
-    - `code/download_buildings.ipynb` to download all the cadastre data for central europe
-    - `code/explore_cadastre_data.ipynb` to standardise all the cadstre data from different countries into a single format
-    - `code/generate_regions.ipynb` to split the buildings into regions for independent processing
-    - `code/download_streets.ipynb` to download the raw overture streets for every region
-    - `code/processing_apartment_blocks.ipynb` to update socialist housing in Czechia ( needs to be run after building simplification)
-    - `bash full_run.sh` to run the entire processing pipeline from building, street preprocessing, element generation, characters calculations and morphotope creation.
-    - `code/noise.ipynb` to assign the noise points to the nearest clusters.
-    - `code/morphotope_postprocessing.ipynb` to fix morphotope geometries based on adjacency.
-    - `code/morphotope_chars.ipynb` to generate characteristics specific to morphotopes.
-    - `code/clustering.ipynb` to generate the heirarchy of morphotopes, and store the data.
-    - `code/noise.ipynb` to assign the noise points to the nearest clusters.
-    - `code/results.ipynb` to generate comparisons with other data products and figures.
+1. `code/download_buildings.ipynb` to download all the cadastre data for central europe
+2. `code/explore_cadastre_data.ipynb` to standardise all the cadstre data from different countries into a single format
+3. `code/generate_regions.ipynb` to split the buildings into regions for independent processing
+4. `code/download_streets.ipynb` to download the raw overture streets for every region
+5. `code/processing_apartment_blocks.ipynb` to update socialist housing in Czechia ( needs to be run after building simplification)
+6. `bash full_run.sh` to run the entire processing pipeline from building, street preprocessing, element generation, characters calculations and morphotope creation.
+7. `code/morphotope_postprocessing.ipynb` to fix morphotope geometries based on adjacency.
+8. `code/morphotope_chars.ipynb` to generate characteristics specific to morphotopes.
+9. `code/clustering.ipynb` to generate the heirarchy of morphotopes, and store the data.
+10. `code/noise.ipynb` to assign the noise points to the nearest clusters.
+11. `code/results.ipynb` to generate comparisons with other data products and figures.
 
 Additional notebooks:
 
-    - `code/process_region.ipynb` to process individual regions or groups of specific regions sequentially or in parallel. 
-    
-    - `code/cluster_exploration.ipynb` to map specific regions and explore the cluster assignments.
-    - `code/interactive_chars_exploration.ipynb` to interactively plot characters in specific regions.
+- `code/process_region.ipynb` to process individual regions or groups of specific regions sequentially or in parallel. 
+
+- `code/cluster_exploration.ipynb` to map specific regions and explore the cluster assignments.
+- `code/interactive_chars_exploration.ipynb` to interactively plot characters in specific regions.
 
 # Extending the hierarchy
 To extend the hierarchy with new data:
@@ -46,11 +44,12 @@ To extend the hierarchy with new data:
 3. `code/process_region.ipynb` for the new regions to run the full processing pipeline - building and street processing, generating elements, morphometric characteristics and morphotope deliniation.
 4. `code/morphotope_postprocessing.ipynb` to fix morphotope geometries based on adjacency.
 5. `code/morphotope_chars.ipynb` to generate characteristics specific to morphotopes.
-The either clustering 
+Then either create a new clustering or assign the new morphotopes to the existing hierarchy directly.
 
 # Generating additional data
 To generate the PM tiles, website assests and the data product:
-    - `code/generate_pmtiles.ipynb` to generate pm tiles from the clustering results.
-    - `code/tree_for_viz.ipynb` to generate the data for the website taxonomy visualisations
-    - `code/data_products.ipynb` to generate the data products
-    - `code/data_products_guide.ipynb` - guide how to use the data products.
+
+- `code/generate_pmtiles.ipynb` to generate pm tiles from the clustering results.
+- `code/tree_for_viz.ipynb` to generate the data for the website taxonomy visualisations
+- `code/data_products.ipynb` to generate the data products
+- `code/data_products_guide.ipynb` - guide how to use the data products.
