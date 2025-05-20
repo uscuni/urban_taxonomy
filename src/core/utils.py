@@ -9,33 +9,32 @@ def get_cluster_names(mapping_level):
 
     if mapping_level == 1:
         cluster_names = {
-     1: 'Sparse Street Network',
-     2: 'Dense Street Network',
+     1: 'Incoherent Fabric',
+     2: 'Coherent Fabric',
 }
 
     elif mapping_level == 2:
         cluster_names ={
-    1: 'Large Scale Developments',
-    2: 'Non-urban Developments',
-    3: 'Large Interconnected Blocks',
-    4: 'Structured Developments'
+    1: 'Incoherent Large-Scale Fabric',
+    2: 'Incoherent Small-Scale Fabric',
+    3: 'Coherent Interconnected Fabric',
+    4: 'Coherent Dense Fabric'
     
 }
 
-    
     elif mapping_level == 3:
         cluster_names = {
-    1: "Wide-space Developments",
-    2: "Large Utilitarian Developments",
-    3: "Linear Developments",
-    4: "Open Layout",
-    5: "Aligned Winding Streets",
-    6: "Large Interconnected Blocks",
-    7: "Dense Standalone Buildings",
-    8: "Dense Adjacent Buildings"
+    1: "Incoherent Large-Scale Homogeneous Fabric",
+    2: "Incoherent Large-Scale Heterogeneous Fabric",
+    3: "Incoherent Small-Scale Linear Fabric",
+    4: "Incoherent Small-Scale Sparse Fabric",
+    5: "Incoherent Small-Scale Compact Fabric",
+    6: "Coherent Interconnected Fabric",
+    7: "Coherent Dense Disjoint Fabric",
+    8: "Coherent Dense Adjacent Fabric"
 }
     else:
-        raise Exceptions('Not named')
+        raise Exceptions(f'Clusters at level {mapping_level} not named')
 
     return cluster_names
 
