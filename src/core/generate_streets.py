@@ -13,7 +13,7 @@ from typing import Optional
 import pyarrow.parquet as pq
 import shapely.wkb
 import geopandas as gpd
-import sgeop
+import neatnet
 
 regions_datadir = "/data/uscuni-ulce/"
 data_dir = "/data/uscuni-ulce/processed_data/"
@@ -81,7 +81,7 @@ def process_region_streets(region_id, streets_dir, buildings_dir):
 
     ## simplify
     buildings = gpd.read_parquet(buildings_dir + f'buildings_{region_id}.parquet', columns=["geometry"])
-    simplified = sgeop.simplify_network(
+    simplified = neatnet.simplify_network(
     streets,
     exclusion_mask=buildings.geometry,
     artifact_threshold_fallback=7,

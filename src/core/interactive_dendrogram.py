@@ -1,77 +1,47 @@
 import numpy as np
 import pandas as pd
 from scipy.cluster.hierarchy import dendrogram
+from scipy.cluster.hierarchy import to_tree
+from jscatter import Line
+
+def rl_traversal(node):
+    # skipping leaves
+    if not node.is_leaf():
+        yield node.id
+        yield from rl_traversal(node.right)
+        yield from rl_traversal(node.left)
+
 
 def get_dendrogram_scatter_data(linkage_matrix):
     '''Add x and y coordinates to the linkage matrix, in order to plot it as a scatter plot.
        Every point is a cluster merger and has x,y,group and order attributes. 
        The x coordinate and item order is calculated by scipy dendrogram, the y is the height of the connection.
-       The group and order fields show how to draw the links between the x and y points.
-       The data is doubled, since every point can be a part of only one group, but most points are both a parent and child.
-       Therefore, during the plotting two points are plotted one over the other.
-       '''
+       Links are represented by the mid point, and are drawn as annotation lines by jscatter.
+
+       Returns
+       -------
+       scatter_df
+         DataFrame
+       links
+         List[jscatter.Line]
+    '''
+    
     R = dendrogram(linkage_matrix, no_plot=True)
-    xs = np.array(R['icoord'])[:, 1:3].sum(axis=1)
+    xs = np.array(R['icoord'])[:, 1:3].sum(axis=1) / 2
     ys = np.array(R['dcoord'])[:, 1]
 
-    ### fast way to find out where in ii, each node is equivalent to np.nonzero(ii == j)
-    ii = np.argsort(ys)
-    sorter = np.argsort(ii)
-    positions = sorter[np.searchsorted(ii, np.arange(0, len(R['dcoord'])), sorter=sorter)]
-    nodes = linkage_matrix[positions, ] 
 
-    ## group for lines
-    n = linkage_matrix.shape[0] + 1
-    line_groups = np.zeros(linkage_matrix.shape[0])
-    line_orders = np.zeros(linkage_matrix.shape[0])
-    for i in range(linkage_matrix.shape[0]-1, 0, -1):
-        
-        if line_groups[i] != 0: continue
-            
-        child, parent = linkage_matrix[i, 0].astype(int), linkage_matrix[i, 1].astype(int)
-        line_groups[i] = i
-        line_orders[i] = 2
-        if child >= n:
-            line_groups[child - n] = i
-            line_orders[child - n] = 3
-        if parent >= n:
-            line_groups[parent - n] = i
-            line_orders[parent - n] = 1
+    root_node, node_list = to_tree(linkage_matrix, rd=True)
+    id_map = dict(zip( reversed(range(root_node.get_count()-1)), rl_traversal(root_node)) )
+
+    scatter_df = pd.DataFrame({'x': xs, 'y': ys})
+    scatter_df['node_id'] = pd.Series(id_map)
+
+    lines = []
+    for icoord,dcoord in zip(R['icoord'], R['dcoord']):
+      lines.append(Line([(float(x),float(y))for x,y in zip(icoord, dcoord)]))
     
-    scatter_df = pd.DataFrame(nodes, columns=['child', 'parent', 'dist', 'size'])
-    scatter_df['x'] = xs
-    scatter_df['y'] = ys
-    scatter_df['group1'] = line_groups[positions].astype('str')
-    scatter_df['order1'] = line_orders[positions].astype(int)
-
-    ## double the data, in order to plot lines
-    nodes = linkage_matrix[positions, ] 
-    line_groups = np.zeros(linkage_matrix.shape[0])
-    line_orders = np.zeros(linkage_matrix.shape[0])
-    for i in range(linkage_matrix.shape[0]-2, 0, -1):
-        
-        if line_groups[i] != 0: continue
-            
-        child, parent = linkage_matrix[i, 0].astype(int), linkage_matrix[i, 1].astype(int)
-        line_groups[i] = i
-        line_orders[i] = 2
-        if child >= n:
-            line_groups[child - n] = i
-            line_orders[child - n] = 3
-        if parent >= n:
-            line_groups[parent - n] = i
-            line_orders[parent - n] = 1
-    
-    scatter_df2 = pd.DataFrame(nodes, columns=['child', 'parent', 'dist', 'size'])
-    scatter_df2['x'] = xs
-    scatter_df2['y'] = ys
-    scatter_df2['group1'] = line_groups[positions].astype('str')
-    scatter_df2['order1'] = line_orders[positions].astype(int)
-    
-    return pd.concat((scatter_df, scatter_df2), ignore_index=True)
-
-
-
+    return scatter_df, lines
 
 
 def zoom_to_label_target(target_morphotope, component_data, scatter_df, scatter, selection=False):

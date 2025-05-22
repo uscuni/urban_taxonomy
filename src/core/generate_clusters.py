@@ -211,7 +211,13 @@ def percentile(n):
     return percentile_
     
 
-def process_single_region_morphotopes(region_id):
+def process_single_region_morphotopes(region_id,
+            graph_dir,
+            buildings_dir,
+            streets_dir,
+            enclosures_dir,
+            tessellations_dir,
+            chars_dir, morphotopes_dir):
 
     print(datetime.datetime.now(), "----Processing ------", region_id)
     X_train = pd.read_parquet(chars_dir + f'primary_chars_{region_id}.parquet')
