@@ -16,7 +16,7 @@ Notebooks, enrivonment and code to generate the taxonomy of Central European Urb
 
 # Reproducing the paper
 
-To run the analysis on the whole dataset - first, make sure you have the correct folder structure in place. Then, run:
+To run the analysis on the whole dataset - first, make sure you have the correct folder structure in place. Then checkout the ``results`` branch from the repository. Then, run:
 1. `code/download_buildings.ipynb` to download all the cadastre data for central europe
 2. `code/explore_cadastre_data.ipynb` to standardise all the cadstre data from different countries into a single format
 3. `code/generate_regions.ipynb` to split the buildings into regions for independent processing
