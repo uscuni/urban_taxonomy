@@ -2,18 +2,6 @@
 
 Notebooks, enrivonment and code to generate the taxonomy of Central European Urban Fabric.
 
-# To run:
-
-1. Clone this repository.
-
-2. Run `pixi install`, then `pixi run build` and optionally `pixi run tests` . These commands setup the enviroment and all the required packages.
-
-    - Alternatively you can manually install the conda-forge dependencies, but you have to still run the pixi build and tests commands:
-           `pixi add momepy umap-learn fast_hdbscan jupyterlab pyarrow matplotlib lonboard folium mapclassify datashader  dask pip sidecar glasbey scikit-image colorcet pandas holoviews bokeh=3.1 esda pytest hdbscan`
-
-4. To run jupyter use either `pixi run jupyter lab` or pass extra arguments like `pixi run jupyter lab --port 8888`.
-
-
 # Reproducing the paper
 
 1. First, make sure you have the correct folder structure in place or you will have to change it in the python scripts/notebooks.
@@ -40,7 +28,7 @@ Then, run:
 
 Additional notebooks:
 
-- `code/process_region.ipynb` to process individual regions or groups of specific regions sequentially or in parallel. 
+- `code/process_region.ipynb` to process individual regions or groups of specific regions sequentially or in parallel.
 
 - `code/cluster_exploration.ipynb` to map specific regions and explore the cluster assignments.
 - `code/interactive_chars_exploration.ipynb` to interactively plot characters in specific regions.
@@ -48,7 +36,7 @@ Additional notebooks:
 # Extending the hierarchy or running from main
 
 ## Running from main
-1. Clone the repository 
+1. Clone the repository
 2. Run `pixi install`, then optionally `pixi run generate_test_data` and `pixi run tests`.
 3. Follow the same structure as above.
 
