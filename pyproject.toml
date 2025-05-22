@@ -4,7 +4,7 @@ description = "Add a short description here"
 name = "core"
 requires-python = "== 3.12.*"
 version = "0.1.0"
-dependencies = ["geoplanar>=0.4.0,<0.5"]
+dependencies = ["evoc>=0.1.1,<0.2", "dataframe-image>=0.2.7,<0.3", "geoplanar>=0.4.0,<0.5"]
 
 [build-system]
 build-backend = "hatchling.build"
@@ -19,7 +19,6 @@ core = { path = ".", editable = true }
 
 [tool.pixi.tasks]
 make_tests_dir = "mkdir -p test/processed_data/"
-
 generate_test_data = {cmd="python src/core/tests/generate_test_data.py", depends-on=["make_tests_dir"]}
 tests = "pytest src/core/tests/tests.py"
 
@@ -56,3 +55,5 @@ shapely = ">=2.1.0,<3"
 fast_hdbscan = ">=0.2.2,<0.3"
 neatnet = ">=0.0.4,<0.0.5"
 momepy = ">=0.10.0,<0.11"
+contextily = ">=1.6.2,<2"
+matplotlib-scalebar = ">=0.9.0,<0.10"

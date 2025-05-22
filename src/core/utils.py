@@ -5,6 +5,57 @@ import geopandas as gpd
 from libpysal.graph import Graph
 
 
+def get_cluster_names(mapping_level):
+
+    if mapping_level == 1:
+        cluster_names = {
+     1: 'Incoherent Fabric',
+     2: 'Coherent Fabric',
+}
+
+    elif mapping_level == 2:
+        cluster_names ={
+    1: 'Incoherent Large-Scale Fabric',
+    2: 'Incoherent Small-Scale Fabric',
+    3: 'Coherent Interconnected Fabric',
+    4: 'Coherent Dense Fabric'
+    
+}
+
+    elif mapping_level == 3:
+        cluster_names = {
+    1: "Incoherent Large-Scale Homogeneous Fabric",
+    2: "Incoherent Large-Scale Heterogeneous Fabric",
+    3: "Incoherent Small-Scale Linear Fabric",
+    4: "Incoherent Small-Scale Sparse Fabric",
+    5: "Incoherent Small-Scale Compact Fabric",
+    6: "Coherent Interconnected Fabric",
+    7: "Coherent Dense Disjoint Fabric",
+    8: "Coherent Dense Adjacent Fabric"
+}
+    else:
+        raise Exceptions(f'Clusters at level {mapping_level} not named')
+
+    return cluster_names
+
+
+def make_ordinal(n):
+    '''
+    Convert an integer into its ordinal representation::
+
+        make_ordinal(0)   => '0th'
+        make_ordinal(3)   => '3rd'
+        make_ordinal(122) => '122nd'
+        make_ordinal(213) => '213th'
+    '''
+    n = int(n)
+    if 11 <= (n % 100) <= 13:
+        suffix = 'th'
+    else:
+        suffix = ['th', 'st', 'nd', 'rd', 'th'][min(n % 10, 4)]
+    return str(n) + suffix
+
+
 def lazy_higher_order(graph, k, n_splits, iteration_order=None):
     """Generate a higher order pysal.Graph in chunks"""
     A = graph.transform("B").sparse
