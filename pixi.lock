@@ -276,7 +276,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/nbconvert-core-7.16.6-pyh29332c3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/nbformat-5.10.4-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/ncurses-6.5-h2d0b736_3.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/neatnet-0.0.4-pyhd8ed1ab_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/neatnet-0.1.1-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/nest-asyncio-1.6.0-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/networkx-3.4.2-pyh267e887_2.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/notebook-shim-0.2.4-pyhd8ed1ab_1.conda
@@ -1356,7 +1356,7 @@ packages:
 - pypi: .
   name: core
   version: 0.1.0
-  sha256: 04580a7bbcd8ffebdb271184e0b155ee776f3ee76699e10a6bfc10869b0d88f9
+  sha256: ced47e6e8a83f656d028ee1e2e5e1cc0189f82e220794829f541cc1aa2c2db9a
   requires_dist:
   - evoc>=0.1.1,<0.2
   - dataframe-image>=0.2.7,<0.3
@@ -4423,9 +4423,9 @@ packages:
   purls: []
   size: 891641
   timestamp: 1738195959188
-- conda: https://conda.anaconda.org/conda-forge/noarch/neatnet-0.0.4-pyhd8ed1ab_0.conda
-  sha256: c300a70725c991b2308aa7f4dd99514668582d9200f004c69d22f7bab474e8b9
-  md5: 97cecb92949ab537cd60bc80ed1c0375
+- conda: https://conda.anaconda.org/conda-forge/noarch/neatnet-0.1.1-pyhd8ed1ab_0.conda
+  sha256: 768fdc33f5a81a707dc94e51afd8292734c7f22c6a65508d17c79ae6bf7c62a8
+  md5: 1413aaba3d5decc1c0331d406b7c489d
   depends:
   - esda >=2.6.0
   - geopandas >=1.0.1
@@ -4441,8 +4441,8 @@ packages:
   license_family: BSD
   purls:
   - pkg:pypi/neatnet?source=hash-mapping
-  size: 108855
-  timestamp: 1741032587737
+  size: 111127
+  timestamp: 1746295022729
 - conda: https://conda.anaconda.org/conda-forge/noarch/nest-asyncio-1.6.0-pyhd8ed1ab_1.conda
   sha256: bb7b21d7fd0445ddc0631f64e66d91a179de4ba920b8381f29b9d006a42788c0
   md5: 598fd7d4d0de2455fb74f56063969a97

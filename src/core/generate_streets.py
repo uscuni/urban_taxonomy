@@ -81,7 +81,7 @@ def process_region_streets(region_id, streets_dir, buildings_dir):
 
     ## simplify
     buildings = gpd.read_parquet(buildings_dir + f'buildings_{region_id}.parquet', columns=["geometry"])
-    simplified = neatnet.simplify_network(
+    simplified = neatnet.neatify(
     streets,
     exclusion_mask=buildings.geometry,
     artifact_threshold_fallback=7,
