@@ -147,3 +147,5 @@ manual_deps/
 data/
 *_log.txt
 test/processed_data/
+code/nns.parquet
+code/grouped_data.parquet
