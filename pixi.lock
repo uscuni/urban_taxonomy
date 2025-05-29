@@ -255,7 +255,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/lz4-4.4.4-py312hf0f0c11_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/lz4-c-1.10.0-h5888daf_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/lzo-2.10-hd590300_1001.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/mapclassify-2.8.1-pyhd8ed1ab_1.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/mapclassify-2.9.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/markdown-3.8-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/markdown-it-py-3.0.0-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/markupsafe-3.0.2-py312h178313f_1.conda
@@ -4094,22 +4094,22 @@ packages:
   purls: []
   size: 171416
   timestamp: 1713515738503
-- conda: https://conda.anaconda.org/conda-forge/noarch/mapclassify-2.8.1-pyhd8ed1ab_1.conda
-  sha256: c498a016b233be5a7defee443733a82d5fe41b83016ca8a136876a64fd15564b
-  md5: c48bbb2bcc3f9f46741a7915d67e6839
+- conda: https://conda.anaconda.org/conda-forge/noarch/mapclassify-2.9.0-pyhd8ed1ab_0.conda
+  sha256: 311e2f92889ebc168e04f0807b4a775ba4f8a8f971797fd197eeb3b19e3fde3e
+  md5: fc7132be76ec30c547189b73a1168e0f
   depends:
   - networkx >=2.7
   - numpy >=1.23
   - pandas >=1.4,!=1.5.0
-  - python >=3.9
+  - python >=3.11
   - scikit-learn >=1.0
   - scipy >=1.8
   license: BSD-3-Clause
   license_family: BSD
   purls:
-  - pkg:pypi/mapclassify?source=hash-mapping
-  size: 56772
-  timestamp: 1733731193211
+  - pkg:pypi/mapclassify?source=compressed-mapping
+  size: 276836
+  timestamp: 1748411918865
 - conda: https://conda.anaconda.org/conda-forge/noarch/markdown-3.8-pyhd8ed1ab_0.conda
   sha256: 04c3f45b1390ee24d3c088d3dbaa20473311d99e1c3ba73099efdf91e2ae2bd3
   md5: 016103aab3842859e6702d7f8bbb0a54
