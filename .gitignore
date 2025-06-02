@@ -149,3 +149,4 @@ data/
 test/processed_data/
 code/nns.parquet
 code/grouped_data.parquet
+code/cdata.parquet
