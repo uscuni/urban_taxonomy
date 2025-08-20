@@ -6,22 +6,19 @@ import geopandas as gpd
 import momepy as mm
 from libpysal.graph import Graph
 
-regions_datadir = "/data/uscuni-ulce/"
-data_dir = "/data/uscuni-ulce/processed_data/"
+regions_datadir = "D:/Work/Github_Morphotopes/data/"
 eubucco_files = glob.glob(regions_datadir + "eubucco_raw/*")
-regions_buildings_dir = '/data/uscuni-ulce/regions/buildings/'
-buildings_dir = '/data/uscuni-ulce/processed_data/buildings/'
-overture_streets_dir = '/data/uscuni-ulce/overture_streets/'
-streets_dir = '/data/uscuni-ulce/processed_data/streets/'
-enclosures_dir = '/data/uscuni-ulce/processed_data/enclosures/'
-tessellations_dir = '/data/uscuni-ulce/processed_data/tessellations/'
-graph_dir = '/data/uscuni-ulce/processed_data/neigh_graphs/'
-chars_dir = '/data/uscuni-ulce/processed_data/chars/'
+buildings_dir = 'D:/Work/Github_Morphotopes/data/'
+streets_dir = 'D:/Work/Github_Morphotopes/data/streets/'
+enclosures_dir = 'D:/Work/Github_Morphotopes/data/enclosures/'
+tessellations_dir = 'D:/Work/Github_Morphotopes/data/tessellations/'
+graph_dir = 'D:/Work/Github_Morphotopes/data/neigh_graphs/'
+chars_dir = 'D:/Work/Github_Morphotopes/data/chars/'
 
 def process_all_regions_graphs():
     
     region_hulls = gpd.read_parquet(
-        regions_datadir + "regions/" + "cadastre_regions_hull.parquet"
+        regions_datadir + "cadastre_regions_hull.parquet"
     )
     
     for region_id, _ in region_hulls.iterrows():

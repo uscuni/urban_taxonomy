@@ -12,16 +12,32 @@
 
 
 
-# pixi run python src/core/generate_buildings.py > buildings_log.txt
-# cp -r /data/uscuni-ulce/processed_data/simplified_buildings/ /data/uscuni-ulce/processed_data/buildings/
+pixi run python src/core/generate_buildings.py > buildings_log.txt
+# run this in bash: pixi run python src/core/generate_buildings.py *> D:\Work\Github_Morphotopes\data\bash_txt_files\buildings_log.txt
+
+# To copy Simplified_buildings folder into builings folder
+cp -r D:/Work/Github_Morphotopes/data/simplified_buildings/ D:/Work/Github_Morphotopes/data/buildings/
+
 # run prcessing_socialist apartments
-#pixi run python src/core/generate_streets.py > streets_log.txt
-# pixi run python src/core/generate_elements.py &> elements_log.txt
-# pixi run python src/core/generate_ngraphs.py &> ngraphs_log.txt
+
+pixi run python src/core/generate_streets.py > &> D:/Work/Github_Morphotopes/data/bash_txt_files/streets_log.txt
+# run this in bash: pixi run python src/core/generate_streets.py *> D:\Work\Github_Morphotopes\data\bash_txt_files\streets_log.txt
 
 
-# pixi run python src/core/generate_chars.py &> chars_log.txt
-# pixi run python src/core/generate_merged_primary_chars.py &> merged_log.txt
+###### DID BEFORE'''''''''''''''''''''''''''''''''''''''''''''
+pixi run python src/core/generate_elements.py &> D:/Work/Github_Morphotopes/data/bash_txt_files/elements_log.txt
+# run this in bash: pixi run python src/core/generate_ngraphs.py *> D:\Work\Github_Morphotopes\data\bash_txt_files\elements_log.txt
 
-pixi run python src/core/generate_clusters.py &> morphotopes_log.txt
+pixi run python src/core/generate_ngraphs.py &> D:/Work/Github_Morphotopes/data/bash_txt_files/ngraphs_log.txt
+# run this in bash: pixi run python src/core/generate_ngraphs.py *> D:\Work\Github_Morphotopes\data\bash_txt_files\ngraphs_log.txt
+
+pixi run python src/core/generate_chars.py &> D:/Work/Github_Morphotopes/data/bash_txt_files/chars_log.txt
+# run this in bash: pixi run python src/core/generate_chars.py *> D:\Work\Github_Morphotopes\data\bash_txt_files\chars_log.txt
+
+
+
+
+#pixi run python src/core/generate_merged_primary_chars.py &> D:/Work/Github_Morphotopes/data/bash_txt_files/merged_log.txt
+
+#pixi run python src/core/generate_clusters.py &> D:/Work/Github_Morphotopes/data/bash_txt_files/morphotopes_log.txt
 

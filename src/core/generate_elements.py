@@ -9,46 +9,44 @@ from libpysal.graph import Graph
 from shapely import GEOSException
 from shapely import Point
 
-regions_buildings_dir = '/data/uscuni-ulce/regions/buildings/'
-buildings_dir = '/data/uscuni-ulce/processed_data/buildings/'
-overture_streets_dir = '/data/uscuni-ulce/overture_streets/'
-streets_dir = '/data/uscuni-ulce/processed_data/streets/'
-enclosures_dir = '/data/uscuni-ulce/processed_data/enclosures/'
-tessellations_dir = '/data/uscuni-ulce/processed_data/tessellations/'
-regions_datadir = '/data/uscuni-ulce/'
+import pandas as pd
+from shapely.affinity import translate
 
+
+#regions_buildings_dir = 'D:/Work/Github_Morphotopes/data/buildings/'
+#overture_streets_dir = 'D:/Work/Github_Morphotopes/data/overture_streets/'
+
+buildings_dir = 'D:/Work/Github_Morphotopes/data/'
+tessellations_dir = 'D:/Work/Github_Morphotopes/data/tessellations/'
+regions_datadir = 'D:/Work/Github_Morphotopes/data/'
+enclosures_dir = 'D:/Work/Github_Morphotopes/data/enclosures/'
+streets_dir = 'D:/Work/Github_Morphotopes/data/overture_streets/'
 
 def process_all_regions_elements():
 
-    region_hulls = gpd.read_parquet(
-            regions_datadir + "regions/" + "cadastre_regions_hull.parquet"
-    )
+    region_hulls = gpd.read_parquet(regions_datadir + "cadastre_regions_hull.parquet")
+    print("----", "Processing region: ", region_id, datetime.datetime.now())
+    enclosures, tesselations = process_region_elements(buildings_dir, streets_dir, region_id)
 
-    ## run one region at a time, since the inner function is parallelized
-    for region_id, region_hull in region_hulls.iterrows():
-
-        print("----", "Processing region: ", region_id, datetime.datetime.now())
-        enclosures, tesselations = process_region_elements(buildings_dir, streets_dir, region_id)
-
-        enclosures.to_parquet(enclosures_dir + f"enclosure_{region_id}.parquet")
-        print("Processed enclosures")
+    enclosures.to_parquet(enclosures_dir + f"enclosure_{region_id}.parquet")
+    print("Processed enclosures")
 
         ## save files
-        tesselations.to_parquet(
-            tessellations_dir + f"tessellation_{region_id}.parquet"
-        )
-        print("processed tesselations")
+    tesselations.to_parquet(
+        tessellations_dir + f"tessellation_{region_id}.parquet"
+    )
 
-        del enclosures
-        del tesselations
-        gc.collect()
+
+    del enclosures
+    del tesselations
+    gc.collect()
+
+       
 
 
 def process_all_regions_elements_parallel():
     from joblib import Parallel, delayed
-    region_hulls = gpd.read_parquet(
-            regions_datadir + "regions/" + "cadastre_regions_hull.parquet"
-    )
+    region_hulls = gpd.read_parquet(regions_datadir +"cadastre_regions_hull.parquet")
 
     processed_region_ids = [int(s.split('.')[0].split('_')[-1])for s in glob.glob(tessellations_dir + '*')]
     region_hulls = region_hulls[~region_hulls.index.isin(processed_region_ids)]
@@ -62,14 +60,18 @@ def process_single_region_elements(region_id):
     enclosures, tesselations = process_region_elements(buildings_dir, streets_dir, region_id)
     
     enclosures.to_parquet(enclosures_dir + f"enclosure_{region_id}.parquet")
+
+    enclosures.to_file(enclosures_dir + f"enclosure_{region_id}.gpkg", driver= 'GPKG')
     print("Processed enclosures")
     
     ## save files
     tesselations.to_parquet(
         tessellations_dir + f"tessellation_{region_id}.parquet"
     )
+    tesselations.to_file(tessellations_dir + f"tessellation_{region_id}.gpkg", driver= 'GPKG') 
     print("processed tesselations")
-
+    
+    print("processed tesselations")
 
 
 
@@ -182,19 +184,51 @@ def generate_enclosures(buildings, streets):
 
 
 def generate_enclosures_representative_points(buildings, streets):
-    ## generate additional_boundaries
-    min_buffer: float = 0
-    max_buffer: float = 100
+    min_buffer, max_buffer = 0, 100
 
+    # 1) compute label points
+    pts = buildings.representative_point()
+    dfp = gpd.GeoDataFrame(geometry=pts, crs=buildings.crs)
+    dfp["x"], dfp["y"] = pts.x, pts.y
+
+    # 2) make them unique
+    dup_mask = dfp.duplicated(subset=["x", "y"], keep=False)
+    if dup_mask.any():
+        # Option 1: tiny deterministic jitter (keeps all buildings)
+        eps = 0.01  # ~1 cm if CRS is meters (UTM)
+        for _, grp in dfp[dup_mask].groupby(["x", "y"]):
+            for k, idx in enumerate(grp.index):
+                dfp.at[idx, "geometry"] = translate(dfp.at[idx, "geometry"], eps*k, eps*k)
+
+        # (or Option 2: drop second+ of each duplicate)
+        # dfp = dfp.drop_duplicates(subset=["x","y"], keep="first")
+        # buildings = buildings.loc[dfp.index]
+
+    # 3) build the graph (allow coplanar points anyway)
     gabriel = Graph.build_triangulation(
-        buildings.representative_point(), "gabriel", kernel="identity"
+        dfp.geometry, "gabriel", kernel="identity", coplanar="clique"
     )
     max_dist = gabriel.aggregate("max")
     buffer = np.clip(max_dist / 2 + max_dist * 0.1, min_buffer, max_buffer).values
-    buffered_buildings = buildings.buffer(buffer, resolution=2).union_all()
 
+    buffered_buildings = buildings.buffer(buffer, resolution=2).union_all()
     enclosures = mm.enclosures(streets, limit=buffered_buildings, clip=True)
     return enclosures
+
+#def generate_enclosures_representative_points(buildings, streets):
+    ## generate additional_boundaries
+  #  min_buffer: float = 0
+   # max_buffer: float = 100
+
+    #gabriel = Graph.build_triangulation(
+    #   buildings.representative_point(), "gabriel", kernel="identity"
+    #)
+    #max_dist = gabriel.aggregate("max")
+    #buffer = np.clip(max_dist / 2 + max_dist * 0.1, min_buffer, max_buffer).values
+    #buffered_buildings = buildings.buffer(buffer, resolution=2).union_all()
+
+    #enclosures = mm.enclosures(streets, limit=buffered_buildings, clip=True)
+    #return enclosures
 
 
 if __name__ == "__main__":
