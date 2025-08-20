@@ -2,6 +2,10 @@ import datetime
 import gc
 import glob
 
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # 
+
 import geopandas as gpd
 import momepy as mm
 import numpy as np
@@ -11,20 +15,19 @@ from core.utils import partial_apply, partial_describe_reached_agg, partial_mean
 from core.utils import largest_regions
 from shapely import unary_union
 
-regions_datadir = "/data/uscuni-ulce/"
-regions_buildings_dir = '/data/uscuni-ulce/regions/buildings/'
-buildings_dir = '/data/uscuni-ulce/processed_data/buildings/'
-overture_streets_dir = '/data/uscuni-ulce/overture_streets/'
-streets_dir = '/data/uscuni-ulce/processed_data/streets/'
-enclosures_dir = '/data/uscuni-ulce/processed_data/enclosures/'
-tessellations_dir = '/data/uscuni-ulce/processed_data/tessellations/'
-graph_dir = '/data/uscuni-ulce/processed_data/neigh_graphs/'
-chars_dir = '/data/uscuni-ulce/processed_data/chars/'
+regions_datadir   = "D:/Work/Github_Morphotopes/data/"
+# adjust this next one if your buildings live elsewhere:
+buildings_dir     = "D:/Work/Github_Morphotopes/data/"
+streets_dir       = "D:/Work/Github_Morphotopes/data/streets/"
+enclosures_dir    = "D:/Work/Github_Morphotopes/data/enclosures/"
+tessellations_dir = "D:/Work/Github_Morphotopes/data/tessellations/"
+graph_dir         = "D:/Work/Github_Morphotopes/data/neigh_graphs/"
+chars_dir         = "D:/Work/Github_Morphotopes/data/chars/"
 
 def process_regions(largest):
     
     region_hulls = gpd.read_parquet(
-        regions_datadir + "regions/" + "cadastre_regions_hull.parquet"
+        regions_datadir + "cadastre_regions_hull.parquet"
     )
         
     if largest:
@@ -123,7 +126,7 @@ def process_street_chars(
     chars_dir
 ):
     print("Processing streets")
-    streets = gpd.read_parquet(streets_dir + f"/streets_{region_id}.parquet")
+    streets = gpd.read_parquet(streets_dir + f"streets_{region_id}.parquet")
     
     graph = mm.gdf_to_nx(streets, preserve_index=True)
     graph = mm.node_degree(graph)
@@ -577,6 +580,17 @@ def process_tessellation_chars(
     gc.collect()
 
 
+#if __name__ == "__main__":
+ #   process_regions(False)
+  #  process_regions(True)
+
 if __name__ == "__main__":
-    process_regions(False)
-    process_regions(True)
+    process_single_region_chars(
+        0,
+        graph_dir,
+        buildings_dir,
+        streets_dir,
+        enclosures_dir,
+        tessellations_dir,
+        chars_dir
+    )
