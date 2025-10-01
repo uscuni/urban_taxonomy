@@ -7,49 +7,59 @@ import momepy as mm
 import numpy as np
 import pandas as pd
 from libpysal.graph import read_parquet
-from core.utils import partial_apply, partial_describe_reached_agg, partial_mean_intb_dist
+from core.utils import (
+    partial_apply,
+    partial_describe_reached_agg,
+    partial_mean_intb_dist,
+)
 from core.utils import largest_regions
 from shapely import unary_union
 
 regions_datadir = "/data/uscuni-ulce/"
-regions_buildings_dir = '/data/uscuni-ulce/regions/buildings/'
-buildings_dir = '/data/uscuni-ulce/processed_data/buildings/'
-overture_streets_dir = '/data/uscuni-ulce/overture_streets/'
-streets_dir = '/data/uscuni-ulce/processed_data/streets/'
-enclosures_dir = '/data/uscuni-ulce/processed_data/enclosures/'
-tessellations_dir = '/data/uscuni-ulce/processed_data/tessellations/'
-graph_dir = '/data/uscuni-ulce/processed_data/neigh_graphs/'
-chars_dir = '/data/uscuni-ulce/processed_data/chars/'
+regions_buildings_dir = "/data/uscuni-ulce/buildings_in_regions/"
+buildings_dir = "/data/uscuni-ulce/processed_data/buildings/"
+overture_streets_dir = "/data/uscuni-ulce/overture_streets/"
+streets_dir = "/data/uscuni-ulce/processed_data/streets/"
+enclosures_dir = "/data/uscuni-ulce/processed_data/enclosures/"
+tessellations_dir = "/data/uscuni-ulce/processed_data/tessellations/"
+graph_dir = "/data/uscuni-ulce/processed_data/neigh_graphs/"
+chars_dir = "/data/uscuni-ulce/processed_data/chars/"
+
 
 def process_regions(largest):
-    
     region_hulls = gpd.read_parquet(
         regions_datadir + "regions/" + "cadastre_regions_hull.parquet"
     )
-        
+
     if largest:
         for region_id in largest_regions:
-            process_single_region_chars(    region_id,
-                                                    graph_dir,
-                                                    buildings_dir,
-                                                    streets_dir,
-                                                    enclosures_dir,
-                                                    tessellations_dir,
-                                                    chars_dir)
-            
+            process_single_region_chars(
+                region_id,
+                graph_dir,
+                buildings_dir,
+                streets_dir,
+                enclosures_dir,
+                tessellations_dir,
+                chars_dir,
+            )
+
     else:
         regions_hulls = region_hulls[~region_hulls.index.isin(largest_regions)]
         from joblib import Parallel, delayed
+
         n_jobs = -1
         new = Parallel(n_jobs=n_jobs)(
-            delayed(process_single_region_chars)(    region_id,
-                                                    graph_dir,
-                                                    buildings_dir,
-                                                    streets_dir,
-                                                    enclosures_dir,
-                                                    tessellations_dir,
-                                                    chars_dir) for region_id, _ in regions_hulls.iterrows()
-                                                        )
+            delayed(process_single_region_chars)(
+                region_id,
+                graph_dir,
+                buildings_dir,
+                streets_dir,
+                enclosures_dir,
+                tessellations_dir,
+                chars_dir,
+            )
+            for region_id, _ in regions_hulls.iterrows()
+        )
 
 
 def process_single_region_chars(
@@ -59,7 +69,7 @@ def process_single_region_chars(
     streets_dir,
     enclosures_dir,
     tessellations_dir,
-    chars_dir
+    chars_dir,
 ):
     print(datetime.datetime.now(), "----Processing ------", region_id)
 
@@ -71,7 +81,7 @@ def process_single_region_chars(
             streets_dir,
             enclosures_dir,
             tessellations_dir,
-            chars_dir
+            chars_dir,
         )
         gc.collect()
 
@@ -82,7 +92,7 @@ def process_single_region_chars(
             streets_dir,
             enclosures_dir,
             tessellations_dir,
-            chars_dir
+            chars_dir,
         )
         gc.collect()
 
@@ -93,7 +103,7 @@ def process_single_region_chars(
             streets_dir,
             enclosures_dir,
             tessellations_dir,
-            chars_dir
+            chars_dir,
         )
         gc.collect()
 
@@ -104,10 +114,10 @@ def process_single_region_chars(
             streets_dir,
             enclosures_dir,
             tessellations_dir,
-            chars_dir
+            chars_dir,
         )
         gc.collect()
-    
+
     except Exception as e:
         print("PROBLEM IN REGION", region_id)
         print(e)
@@ -120,11 +130,11 @@ def process_street_chars(
     streets_dir,
     enclosures_dir,
     tessellations_dir,
-    chars_dir
+    chars_dir,
 ):
     print("Processing streets")
     streets = gpd.read_parquet(streets_dir + f"/streets_{region_id}.parquet")
-    
+
     graph = mm.gdf_to_nx(streets, preserve_index=True)
     graph = mm.node_degree(graph)
     graph = mm.subgraph(
@@ -175,16 +185,13 @@ def process_street_chars(
         tessellations_dir + f"tessellation_{region_id}.parquet"
     )
 
-    
-    tess_nid = mm.get_nearest_street(
-        tessellation, edges
-    )
+    tess_nid = mm.get_nearest_street(tessellation, edges)
 
     # links = mm.get_network_ratio(tessellation, edges)
     # tessellation[['edgeID_keys', 'edgeID_values']] = links
     # keys = tessellation.edgeID_values.apply(lambda a: np.argmax(a))
     # tess_nid = np.array([inds[i] for inds, i in zip(tessellation.edgeID_keys, keys)])
-    
+
     edges["sdsAre"] = mm.describe_agg(
         tessellation.geometry.area, tess_nid, statistics=["count", "sum"]
     )["sum"]
@@ -201,19 +208,15 @@ def process_street_chars(
     edges["ldsRea"] = res["count"]
     edges["ldsAre"] = res["sum"]
 
-   
-
     ## street building interactions
     buildings = gpd.read_parquet(buildings_dir + f"buildings_{region_id}.parquet")
 
-    blg_nid = mm.get_nearest_street(
-        buildings, edges
-    )
+    blg_nid = mm.get_nearest_street(buildings, edges)
     # buildings per metre
     edges["sisBpM"] = blg_nid.value_counts() / edges.length
 
     ## building area variability
-    edges['misBAD'] = buildings.area.groupby(blg_nid).std().fillna(0)
+    edges["misBAD"] = buildings.area.groupby(blg_nid).std().fillna(0)
 
     # street profile
     profile = mm.street_profile(edges, buildings, height=None, distance=3)
@@ -221,14 +224,9 @@ def process_street_chars(
     edges["sdsSPO"] = profile["openness"]
     edges["sdsSWD"] = profile["width_deviation"]
 
-
-
-    
     # node building interactions
-    bnode_id = mm.get_nearest_node(
-        buildings, nodes, edges, blg_nid
-    )
-    nodes['midBAD'] = buildings.area.groupby(bnode_id).std().fillna(0)
+    bnode_id = mm.get_nearest_node(buildings, nodes, edges, blg_nid)
+    nodes["midBAD"] = buildings.area.groupby(bnode_id).std().fillna(0)
 
     ## nodes tessellation interactions
     nodes_graph = read_parquet(graph_dir + f"nodes_graph_{region_id}.parquet")
@@ -236,11 +234,10 @@ def process_street_chars(
     edges["nID"] = edges.index.values
     tessellation["nID"] = tess_nid
 
-    
     tessellation["nodeID"] = mm.get_nearest_node(
-        tessellation, nodes, edges,  tessellation["nID"]
+        tessellation, nodes, edges, tessellation["nID"]
     )
-    
+
     nodes["sddAre"] = mm.describe_agg(
         tessellation.geometry.area, tessellation["nodeID"]
     )["sum"]
@@ -278,12 +275,10 @@ def process_enclosure_chars(
     streets_dir,
     enclosures_dir,
     tessellations_dir,
-    chars_dir
+    chars_dir,
 ):
     print("Processing enclosures")
-    enclosures = gpd.read_parquet(
-        enclosures_dir + f"enclosure_{region_id}.parquet"
-    )
+    enclosures = gpd.read_parquet(enclosures_dir + f"enclosure_{region_id}.parquet")
     enclosures["ldkAre"] = enclosures.geometry.area
     enclosures["ldkPer"] = enclosures.geometry.length
     enclosures["lskCCo"] = mm.circular_compactness(enclosures)
@@ -294,17 +289,15 @@ def process_enclosure_chars(
     blo_q1 = read_parquet(graph_dir + f"enclosure_graph_{region_id}.parquet")
     enclosures["ltkWNB"] = mm.neighbors(enclosures, blo_q1, weighted=True)
 
-
-    #enclosures tessellation interactions
+    # enclosures tessellation interactions
     tessellation = gpd.read_parquet(
         tessellations_dir + f"tessellation_{region_id}.parquet"
     )
-    encl_counts = tessellation.groupby('enclosure_index').count()
-    enclosures['likWCe'] = encl_counts['geometry'] / enclosures.geometry.area
+    encl_counts = tessellation.groupby("enclosure_index").count()
+    enclosures["likWCe"] = encl_counts["geometry"] / enclosures.geometry.area
 
     ## buildings enclosures interactions
     buildings = gpd.read_parquet(buildings_dir + f"buildings_{region_id}.parquet")
-
 
     beid = buildings.merge(
         tessellation["enclosure_index"], left_index=True, right_index=True
@@ -317,9 +310,6 @@ def process_enclosure_chars(
     )
 
     enclosures["likWBB"] = res["sum"] / enclosures.geometry.area
-
-
-    
 
     enclosures.to_parquet(chars_dir + f"enclosures_chars_{region_id}.parquet")
 
@@ -335,20 +325,20 @@ def process_building_chars(
     streets_dir,
     enclosures_dir,
     tessellations_dir,
-    chars_dir
+    chars_dir,
 ):
     print("Processing buildings")
     buildings = gpd.read_parquet(buildings_dir + f"buildings_{region_id}.parquet")
-    
+
     buildings["ssbCCo"] = mm.circular_compactness(buildings)
     buildings["ssbCor"] = mm.corners(buildings, eps=15)
-    buildings.loc[buildings['ssbCCo'] >= .95, 'ssbCor'] = 0
-    buildings['ssbSqu'] = mm.squareness(buildings, eps=15)
-    buildings.loc[buildings['ssbCCo'] >= .95, 'ssbSqu'] = 90
+    buildings.loc[buildings["ssbCCo"] >= 0.95, "ssbCor"] = 0
+    buildings["ssbSqu"] = mm.squareness(buildings, eps=15)
+    buildings.loc[buildings["ssbCCo"] >= 0.95, "ssbSqu"] = 90
     cencon = mm.centroid_corner_distance(buildings, eps=15)
     buildings["ssbCCM"] = cencon["mean"]
     buildings["ssbCCD"] = cencon["std"]
-    
+
     buildings["sdbAre"] = buildings.geometry.area
     buildings["sdbPer"] = buildings.geometry.length
     buildings["sdbCoA"] = mm.courtyard_area(buildings.geometry)
@@ -359,22 +349,30 @@ def process_building_chars(
 
     ### sometimes shared walls gives GEOS exceptions, region-12199 for example
     try:
-        buildings["mtbSWR"] = mm.shared_walls(buildings, strict=False, tolerance=.15) / buildings.geometry.length
+        buildings["mtbSWR"] = (
+            mm.shared_walls(buildings, strict=False, tolerance=0.15)
+            / buildings.geometry.length
+        )
     except Exception as e:
         print(e, region_id)
         buildings["mtbSWR"] = (
-            mm.shared_walls(buildings.set_precision(1e-6), strict=False, tolerance=.15) / buildings.geometry.length
+            mm.shared_walls(buildings.set_precision(1e-6), strict=False, tolerance=0.15)
+            / buildings.geometry.length
         )
 
     ### add the connected structure characters
     buildings_q1 = read_parquet(graph_dir + f"building_graph_{region_id}.parquet")
-    buildings["libNCo"] = mm.courtyards(buildings, buildings_q1, buffer=.25)
-    buildings["ldbPWL"] = mm.perimeter_wall(buildings, buildings_q1, buffer=.25)
+    buildings["libNCo"] = mm.courtyards(buildings, buildings_q1, buffer=0.25)
+    buildings["ldbPWL"] = mm.perimeter_wall(buildings, buildings_q1, buffer=0.25)
 
-    connected_buildings = buildings.geometry.groupby(buildings_q1.component_labels).apply( lambda x: unary_union(x.values))
-    connected_buildings = connected_buildings.set_crs(epsg=3035).buffer(.1).normalize().make_valid()
+    connected_buildings = buildings.geometry.groupby(
+        buildings_q1.component_labels
+    ).apply(lambda x: unary_union(x.values))
+    connected_buildings = (
+        connected_buildings.set_crs(epsg=3035).buffer(0.1).normalize().make_valid()
+    )
     comps = buildings_q1.component_labels
-    
+
     cardinalities = comps.value_counts()
     lens = connected_buildings.length
     areas = connected_buildings.area
@@ -385,18 +383,18 @@ def process_building_chars(
     fr = mm.facade_ratio(connected_buildings)
     sco = mm.square_compactness(connected_buildings)
 
-    buildings.loc[comps.index.values, 'mibCou'] = cardinalities.loc[comps.values].values
-    buildings.loc[comps.index.values, 'mibLen'] = lens.loc[comps.values].values
-    buildings.loc[comps.index.values, 'mibAre'] = areas.loc[comps.values].values
+    buildings.loc[comps.index.values, "mibCou"] = cardinalities.loc[comps.values].values
+    buildings.loc[comps.index.values, "mibLen"] = lens.loc[comps.values].values
+    buildings.loc[comps.index.values, "mibAre"] = areas.loc[comps.values].values
 
-    buildings.loc[comps.index.values, 'mibElo'] = elos.loc[comps.values].values
-    buildings.loc[comps.index.values, 'mibERI'] = eris.loc[comps.values].values
-    buildings.loc[comps.index.values, 'mibCCo'] = ccos.loc[comps.values].values
-    buildings.loc[comps.index.values, 'mibLAL'] = lals.loc[comps.values].values
+    buildings.loc[comps.index.values, "mibElo"] = elos.loc[comps.values].values
+    buildings.loc[comps.index.values, "mibERI"] = eris.loc[comps.values].values
+    buildings.loc[comps.index.values, "mibCCo"] = ccos.loc[comps.values].values
+    buildings.loc[comps.index.values, "mibLAL"] = lals.loc[comps.values].values
 
-    buildings.loc[comps.index.values, 'mibFR'] = fr.loc[comps.values].values
-    buildings.loc[comps.index.values, 'mibSCo'] = fr.loc[comps.values].values
-    
+    buildings.loc[comps.index.values, "mibFR"] = fr.loc[comps.values].values
+    buildings.loc[comps.index.values, "mibSCo"] = fr.loc[comps.values].values
+
     del connected_buildings
 
     ## building tessellation interactions
@@ -434,14 +432,12 @@ def process_building_chars(
     streets = gpd.read_parquet(streets_dir + f"streets_{region_id}.parquet")
     graph = mm.gdf_to_nx(streets, preserve_index=True)
     nodes, edges = mm.nx_to_gdf(graph, spatial_weights=False)
-    
+
     # tess_nid = mm.get_nearest_street(
     #     tessellation, edges
     # )
-    
-    blg_nid = mm.get_nearest_street(
-        buildings, edges
-    )
+
+    blg_nid = mm.get_nearest_street(buildings, edges)
     street_orientation = mm.orientation(streets)
     buildings["nID"] = blg_nid
     edges["nID"] = edges.index.values
@@ -451,9 +447,7 @@ def process_building_chars(
         blg_nid[~blg_nid.isna()],
     )
 
-    buildings["nodeID"] = mm.get_nearest_node(
-        buildings, nodes, edges,  buildings["nID"]
-    )
+    buildings["nodeID"] = mm.get_nearest_node(buildings, nodes, edges, buildings["nID"])
 
     buildings.to_parquet(chars_dir + f"buildings_chars_{region_id}.parquet")
     del buildings
@@ -469,7 +463,7 @@ def process_tessellation_chars(
     streets_dir,
     enclosures_dir,
     tessellations_dir,
-    chars_dir
+    chars_dir,
 ):
     print("Processing tessellation")
     tessellation = gpd.read_parquet(
@@ -514,43 +508,40 @@ def process_tessellation_chars(
         y=tessellation.geometry.area,
     )
 
-    tessellation['ltcWRB'] = block_counts / block_sums
+    tessellation["ltcWRB"] = block_counts / block_sums
 
     # tesselation buildings interactions
     buildings = gpd.read_parquet(buildings_dir + f"buildings_{region_id}.parquet")
     tessellation["sicCAR"] = buildings.geometry.area / tessellation.geometry.area
 
     ## building area deviations in tess cell neighbourhood
-    tessellation['barea'] = buildings.area
-    tessellation['barea'] = tessellation['barea'].fillna(0)
-    assert (tessellation.loc[buildings.index, 'barea'] == buildings.area).all()
-    
-    res = queen_1.describe(tessellation['barea'])
-    tessellation['micBAD'] = res['std']
+    tessellation["barea"] = buildings.area
+    tessellation["barea"] = tessellation["barea"].fillna(0)
+    assert (tessellation.loc[buildings.index, "barea"] == buildings.area).all()
+
+    res = queen_1.describe(tessellation["barea"])
+    tessellation["micBAD"] = res["std"]
 
     def partial_barea_std(partial_focal, partial_higher, y):
         return partial_higher.describe(
             y.loc[partial_higher.unique_ids], statistics=["std"]
         )["std"]
-    
-    tessellation['licBAD'] = partial_apply(
+
+    tessellation["licBAD"] = partial_apply(
         queen_1,
         higher_order_k=3,
         n_splits=30,
         func=partial_barea_std,
-        y=tessellation['barea'],
+        y=tessellation["barea"],
     )
-    
 
     ## tesselation street interactions
     streets = gpd.read_parquet(streets_dir + f"streets_{region_id}.parquet")
     graph = mm.gdf_to_nx(streets, preserve_index=True)
     nodes, edges = mm.nx_to_gdf(graph, spatial_weights=False)
     street_orientation = mm.orientation(edges)
-    
-    tess_nid = mm.get_nearest_street(
-        tessellation, edges
-    )
+
+    tess_nid = mm.get_nearest_street(tessellation, edges)
     # links = mm.get_network_ratio(tessellation, edges)
     # tessellation[['edgeID_keys', 'edgeID_values']] = links
     # keys = tessellation.edgeID_values.apply(lambda a: np.argmax(a))
@@ -561,11 +552,11 @@ def process_tessellation_chars(
         street_orientation,
         tess_nid.astype(int),
     )
-    
+
     edges["nID"] = edges.index.values
     tessellation["nID"] = tess_nid
     tessellation["nodeID"] = mm.get_nearest_node(
-        tessellation, nodes, edges,  tessellation["nID"]
+        tessellation, nodes, edges, tessellation["nID"]
     )
 
     tessellation.to_parquet(chars_dir + f"tessellations_chars_{region_id}.parquet")

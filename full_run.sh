@@ -1,6 +1,6 @@
 ## download buildings
 ## download streets
-# remove old assigned buildings if alvailable - rm /data/uscuni-ulce/regions/buildings/*
+# remove old assigned buildings if alvailable - rm /data/uscuni-ulce/buildings_in_regions/*
 ## generate regions and spread out buildings
 ## run below
 
