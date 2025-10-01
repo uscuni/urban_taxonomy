@@ -351,6 +351,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/rfc3986-validator-0.1.1-pyh9f0ad1d_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/noarch/rioxarray-0.17.0-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/rpds-py-0.25.1-py312h680f630_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/ruff-0.13.2-ha3a3aed_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/s2n-1.5.18-h763c568_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/scikit-image-0.24.0-py312hf9745cd_3.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/scikit-learn-1.6.1-py312h7a48858_0.conda
@@ -1357,7 +1358,7 @@ packages:
 - pypi: ./
   name: core
   version: 0.1.0
-  sha256: c5f0b0990fca024419e8ada627811168473b0c917b9fc29461bb7f635a70510a
+  sha256: e4acab72bee63c6bfe427136dd6d87228ecda857e5dbce4242f1e9cfbf780e13
   requires_dist:
   - evoc>=0.1.1,<0.2
   - dataframe-image>=0.2.7,<0.3
@@ -5639,6 +5640,22 @@ packages:
   - pkg:pypi/rpds-py?source=hash-mapping
   size: 391950
   timestamp: 1747837859184
+- conda: https://conda.anaconda.org/conda-forge/linux-64/ruff-0.13.2-ha3a3aed_0.conda
+  noarch: python
+  sha256: bfcfabdc7e09e3aed1014719a76071afbe15062b2cd351399120fd77806d8ba5
+  md5: 530a86925873fee63c03d53fdecbf3b6
+  depends:
+  - python
+  - libgcc >=14
+  - __glibc >=2.17,<3.0.a0
+  constrains:
+  - __glibc >=2.17
+  license: MIT
+  license_family: MIT
+  purls:
+  - pkg:pypi/ruff?source=hash-mapping
+  size: 11015565
+  timestamp: 1758825350135
 - conda: https://conda.anaconda.org/conda-forge/linux-64/s2n-1.5.18-h763c568_1.conda
   sha256: 6d0399775ef7841914e99aed5b7330ce3d9d29a4219d40b1b94fd9a50d902a73
   md5: 0bf75253494a85260575e23c3b29db90

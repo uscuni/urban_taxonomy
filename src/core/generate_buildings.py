@@ -10,7 +10,7 @@ from core.utils import largest_regions
 regions_datadir = "/data/uscuni-ulce/"
 data_dir = "/data/uscuni-ulce/processed_data/"
 eubucco_files = glob.glob(regions_datadir + "eubucco_raw/*")
-buildings_dir = "/data/uscuni-ulce/processed_data/simplified_buildings/"
+buildings_dir = "/data/uscuni-ulce/processed_data/buildings/"
 regions_buildings_dir = "/data/uscuni-ulce/buildings_in_regions/"
 
 
