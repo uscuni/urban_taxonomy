@@ -137,6 +137,7 @@ def process_street_chars(
 
     graph = mm.gdf_to_nx(streets, preserve_index=True)
     graph = mm.node_degree(graph)
+
     graph = mm.subgraph(
         graph,
         radius=5,
@@ -155,6 +156,7 @@ def process_street_chars(
         node_density=True,
         verbose=False,
     )
+
     graph = mm.cds_length(graph, radius=3, name="ldsCDL", verbose=False)
     graph = mm.clustering(graph, name="xcnSCl")
     graph = mm.mean_node_dist(graph, name="mtdMDi", verbose=False)

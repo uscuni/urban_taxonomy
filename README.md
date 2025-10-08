@@ -38,17 +38,8 @@ bash full_run.sh`
 11. `code/09_noise.ipynb` to assign the noise points to the nearest clusters.
 12. `code/10_cluster_characteristics.ipynb` to generate characteristics of each cluster.
 13. `code/11_evaluation.ipynb` to generate comparisons with other data products.
+14. `code/12_postprocess_morphotope_ids.ipynb` to ensure uniqueness of noise IDs.
 
-Figures:
-
-- `code/fig_cluster_maps.ipynb` to generate maps of clusters and levels of hierarchy.
-- `code/fig_abundance_maps.ipynb` to generate abundance maps.
-
-Additional notebooks:
-
-- `code/process_region.ipynb` to process individual regions or groups of specific regions sequentially or in parallel.
-- `code/cluster_exploration.ipynb` to map specific regions and explore the cluster assignments.
-- `code/interactive_chars_exploration.ipynb` to interactively plot characters in specific regions.
 
 ## Extending the hierarchy or running from main
 
@@ -60,21 +51,4 @@ Additional notebooks:
 
 ### Adding additional regions
 
-To extend the hierarchy with new data:
-
-1. Download the new building footprints first
-2. `code/add_regions_from_new_buildings.ipynb` to process the new set of buildings - split buildings into regions, name the regions and add them to the existing regions directory.
-2. `code/download_streets.ipynb` to download the streets for the new regions from overture
-3. `code/process_region.ipynb` for the new regions to run the full processing pipeline - building and street processing, generating elements, morphometric characteristics and morphotope deliniation.
-4. `code/morphotope_postprocessing.ipynb` to fix morphotope geometries based on adjacency.
-5. `code/morphotope_chars.ipynb` to generate characteristics specific to morphotopes.
-Then either create a new clustering or assign the new morphotopes to the existing hierarchy directly.
-
-## Generating additional data
-
-To generate the PM tiles, website assests and the data product:
-
-- `code/generate_pmtiles.ipynb` to generate pm tiles from the clustering results.
-- `code/tree_for_viz.ipynb` to generate the data for the website taxonomy visualisations
-- `code/data_products.ipynb` to generate the data products
-- `code/data_products_guide.ipynb` - guide how to use the data products.
+To extend the hierarchy with new data follow the notebooks starting with `ext_` prefix.

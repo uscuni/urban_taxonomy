@@ -276,7 +276,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/nbconvert-core-7.16.6-pyh29332c3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/nbformat-5.10.4-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/ncurses-6.5-h2d0b736_3.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/neatnet-0.1.1-pyhd8ed1ab_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/neatnet-0.1.4-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/nest-asyncio-1.6.0-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/networkx-3.4.2-pyh267e887_2.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/notebook-shim-0.2.4-pyhd8ed1ab_1.conda
@@ -1358,7 +1358,7 @@ packages:
 - pypi: ./
   name: core
   version: 0.1.0
-  sha256: e4acab72bee63c6bfe427136dd6d87228ecda857e5dbce4242f1e9cfbf780e13
+  sha256: b044132a685b26be1c30ce00e3c2dd5ba848193d96f11703543ed68c225df234
   requires_dist:
   - evoc>=0.1.1,<0.2
   - dataframe-image>=0.2.7,<0.3
@@ -4425,9 +4425,9 @@ packages:
   purls: []
   size: 891641
   timestamp: 1738195959188
-- conda: https://conda.anaconda.org/conda-forge/noarch/neatnet-0.1.1-pyhd8ed1ab_0.conda
-  sha256: 768fdc33f5a81a707dc94e51afd8292734c7f22c6a65508d17c79ae6bf7c62a8
-  md5: 1413aaba3d5decc1c0331d406b7c489d
+- conda: https://conda.anaconda.org/conda-forge/noarch/neatnet-0.1.4-pyhd8ed1ab_0.conda
+  sha256: 25967a23f9764538e421c655dd071c5fef0fee20dd912d2a6561c44fe3667e41
+  md5: 8abe9d992125e49eccee49a9f49a5ce3
   depends:
   - esda >=2.6.0
   - geopandas >=1.0.1
@@ -4440,11 +4440,10 @@ packages:
   - scipy >=1.14.1
   - shapely >=2.0.6
   license: BSD-3-Clause
-  license_family: BSD
   purls:
   - pkg:pypi/neatnet?source=hash-mapping
-  size: 111127
-  timestamp: 1746295022729
+  size: 115395
+  timestamp: 1759683571686
 - conda: https://conda.anaconda.org/conda-forge/noarch/nest-asyncio-1.6.0-pyhd8ed1ab_1.conda
   sha256: bb7b21d7fd0445ddc0631f64e66d91a179de4ba920b8381f29b9d006a42788c0
   md5: 598fd7d4d0de2455fb74f56063969a97

@@ -134,7 +134,7 @@ def partial_describe_reached_agg(
             reverse_graph_index.index.values,
             assume_unique=True,
         )
-        relevant_ys_index = reverse_graph_index.loc[relevant_groups].unique()
+        relevant_ys_index = reverse_graph_index.loc[np.unique(relevant_groups)].unique()
 
         partial_result = mm.describe_reached_agg(
             y.loc[relevant_ys_index],
