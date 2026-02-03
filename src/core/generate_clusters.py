@@ -1,4 +1,5 @@
 import glob
+import warnings
 
 import geopandas as gpd
 import matplotlib.pyplot as plt
@@ -50,7 +51,9 @@ def preprocess_clustering_data(X_train, scalar, clip, to_drop):
     X_train = X_train.drop(all_drop, axis=1)
 
     # standardise data
-    vals = scalar.fit_transform(X_train)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        vals = scalar.fit_transform(X_train)
     X_train = pd.DataFrame(vals, columns=X_train.columns, index=X_train.index)
     vals = np.nan_to_num(X_train)
     X_train = pd.DataFrame(vals, columns=X_train.columns, index=X_train.index)
@@ -217,7 +220,7 @@ def process_single_region_morphotopes(region_id,
             streets_dir,
             enclosures_dir,
             tessellations_dir,
-            chars_dir, morphotopes_dir):
+            chars_dir, morphotopes_dir, ignore: str | None = None, generate_data=True):
 
     print(datetime.datetime.now(), "----Processing ------", region_id)
     X_train = pd.read_parquet(chars_dir + f'primary_chars_{region_id}.parquet')
@@ -250,6 +253,8 @@ def process_single_region_morphotopes(region_id,
                'ssbCCM',
                'ssbCCD'
               ]
+    if ignore:
+        to_drop.append(ignore)
     
     linkage='ward'
     metric='euclidean'
@@ -283,17 +288,18 @@ def process_single_region_morphotopes(region_id,
     # morph_clrs_geometry = clrs_geometry.set_geometry('geometry').reset_index()
     # morph_clrs_geometry.to_parquet(morphotopes_dir + f'shapes_morphotopes_{region_id}_{min_cluster_size}_{spatial_lag}_{lag_type}_{kernel}.pq')
 
-    # generate morphotopes data
-    print("--------Generating morphotopes data----------")
-    component_data = X_train.loc[region_cluster_labels.index]
-    component_data = component_data.groupby(region_cluster_labels.values).agg([percentile(25), 
-                                                             'median', 
-                                                             percentile(75), 'std', 'mean'] )
-    # save sizes for clustering
-    component_data[('Size', 'Size')] = X_train.loc[region_cluster_labels.index].groupby(region_cluster_labels.values).size()
-
-    # store morphotopes data
-    component_data.to_parquet(morphotopes_dir + f'data_morphotopes_{region_id}_{min_cluster_size}_{spatial_lag}_{lag_type}_{kernel}_{eom_clusters}.pq')
+    if generate_data:
+        # generate morphotopes data
+        print("--------Generating morphotopes data----------")
+        component_data = X_train.loc[region_cluster_labels.index]
+        component_data = component_data.groupby(region_cluster_labels.values).agg([percentile(25), 
+                                                                 'median', 
+                                                                 percentile(75), 'std', 'mean'] )
+        # save sizes for clustering
+        component_data[('Size', 'Size')] = X_train.loc[region_cluster_labels.index].groupby(region_cluster_labels.values).size()
+    
+        # store morphotopes data
+        component_data.to_parquet(morphotopes_dir + f'data_morphotopes_{region_id}_{min_cluster_size}_{spatial_lag}_{lag_type}_{kernel}_{eom_clusters}.pq')
 
 
 def process_regions(largest):
