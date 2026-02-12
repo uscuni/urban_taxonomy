@@ -220,7 +220,7 @@ def process_single_region_morphotopes(region_id,
             streets_dir,
             enclosures_dir,
             tessellations_dir,
-            chars_dir, morphotopes_dir, ignore: str | None = None, generate_data=True):
+            chars_dir, morphotopes_dir, ignore: str | None = None, generate_data=True, min_cluster_size=75):
 
     print(datetime.datetime.now(), "----Processing ------", region_id)
     X_train = pd.read_parquet(chars_dir + f'primary_chars_{region_id}.parquet')
@@ -234,7 +234,6 @@ def process_single_region_morphotopes(region_id,
 
 
     ### clustering parameters
-    min_cluster_size = 75
     
     # spatial_lag = 3
     # kernel='gaussian' 
