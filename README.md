@@ -2,6 +2,28 @@
 
 Notebooks, enrivonment and code to generate the taxonomy of Central European Urban Fabric.
 
+This accompanies a research paper:
+
+> Fleischmann, Martin, Krasen Samardzhiev, Anna Brázdová, Daniela Dančejová, and Lisa Winkler. 2026. “The Hierarchical Morphotope Classification: A Theory-Driven Framework for Large-Scale Analysis of Built Form.” Cities 174 (July): 107047. https://doi.org/10.1016/j.cities.2026.107047.
+
+
+```bibtex
+@article{fleischmann2026Hierarchical,
+  title = {The Hierarchical Morphotope Classification: {{A}} Theory-Driven Framework for Large-Scale Analysis of Built Form},
+  shorttitle = {The Hierarchical Morphotope Classification},
+  author = {Fleischmann, Martin and Samardzhiev, Krasen and Br{\'a}zdov{\'a}, Anna and Dan{\v c}ejov{\'a}, Daniela and Winkler, Lisa},
+  year = 2026,
+  month = jul,
+  journal = {Cities},
+  volume = {174},
+  pages = {107047},
+  issn = {02642751},
+  doi = {10.1016/j.cities.2026.107047},
+  urldate = {2026-04-07},
+  langid = {english}
+}
+```
+
 ## Reproducing the paper
 
 1. First, make sure you have the correct folder structure in place or you will have to change it in the python scripts/notebooks.
