@@ -1,0 +1,22 @@
+[workspace]
+authors = ["elinda2703 <ela.pospechova@gmail.com>"]
+channels = ["conda-forge"]
+name = "extension2"
+platforms = ["linux-64"]
+version = "0.1.0"
+
+[tasks]
+
+[dependencies]
+jupyterlab = ">=4.6.2,<5"
+geopandas = ">=1.1.4,<2"
+pyarrow = ">=25.0.0,<26"
+dask-geopandas = ">=0.5.0,<0.6"
+fiona = ">=1.10.1,<2"
+tqdm = ">=4.70.0,<5"
+gdal = ">=3.12.4,<4"
+pyrosm = ">=0.25.0,<0.26"
+
+[pypi-dependencies]
+geoplanar = ">=0.6.0, <0.7"
+citydpc = { git = "https://github.com/RWTH-E3D/CityDPC.git" }
