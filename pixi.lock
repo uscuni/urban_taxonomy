@@ -1363,13 +1363,12 @@ packages:
 - pypi: ./
   name: core
   version: 0.1.0
-  sha256: a1887773cc36bd7b53927529d9e3a9bfa3fed379702f2c0d21e8e57219daa8a1
+  sha256: dfe9ad8dca62d3d2e57fcccc8e03ace26faf82d4e725b4c904f0a2ac1bcb1fd4
   requires_dist:
   - evoc>=0.1.1,<0.2
   - dataframe-image>=0.2.7,<0.3
   - geoplanar>=0.4.0,<0.5
   requires_python: ==3.12.*
-  editable: true
 - pypi: https://files.pythonhosted.org/packages/20/0c/7bb51e3acfafd16c48875bf3db03607674df16f5b6ef8d056586af7e2b8b/cssselect-1.4.0-py3-none-any.whl
   name: cssselect
   version: 1.4.0

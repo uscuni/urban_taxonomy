@@ -10,7 +10,7 @@ dependencies = ["evoc>=0.1.1,<0.2", "dataframe-image>=0.2.7,<0.3", "geoplanar>=0
 build-backend = "hatchling.build"
 requires = ["hatchling"]
 
-[tool.pixi.project]
+[tool.pixi.workspace]
 channels = ["conda-forge"]
 platforms = ["linux-64"]
 
